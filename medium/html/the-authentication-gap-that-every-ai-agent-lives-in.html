@@ -1,0 +1,183 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The Authentication Gap That Every AI Agent Lives In</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/the-authentication-gap-that-every-ai-agent-lives-in">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>The Authentication Gap That Every AI Agent Lives In</h1>
+<p class="meta">2026-02-15 &middot; AI, agentic AI, authentication, authorization, Computer Science, Security, Artificial Intelligence</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1771169810948/3465544d-b695-41f1-939f-dbab319f43a3.jpeg" alt=""></p>
+<p><em>Why existing auth was never built for autonomous agents — and how we fixed it with open-source cryptography</em></p>
+<h2 id="heading-the-uncomfortable-truth">The Uncomfortable Truth</h2>
+<p>Your AI agent is authenticating like it's 2009.</p>
+<p>Every day, millions of AI agents make HTTP requests on behalf of the humans who run them. They create pull requests. They read databases. They call third-party services. And every single time, they authenticate with the same mechanism a curl script would — a static API key or an OAuth token designed for a human clicking "Allow" in a browser.</p>
+<p>This works. Until it doesn't.</p>
+<hr />
+<h2 id="heading-the-gap-nobody-talks-about">The Gap Nobody Talks About</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169540/pact-blog/identity-gap.jpg" alt="The Identity Gap" /></p>
+<p>Here's what's broken — not in theory, but in production, right now:</p>
+<p><strong>No provenance.</strong> When an agent hits your API with a bearer token, you see the token. You don't see the human behind it. You don't see the chain of trust. If the agent goes rogue — context poisoned, prompt injected, session hijacked — the token still works.</p>
+<p><strong>No scope boundaries.</strong> A human gives their agent access to "the GitHub API." They mean "create PRs on this one repo." The token doesn't know that. It carries the full blast radius of every permission the human has.</p>
+<p><strong>No accountability.</strong> When something goes wrong — and it will — there's no audit trail that says "this specific agent, delegated by this specific human, with these specific permissions, signed this specific request at this specific time." There's a token in a log. Maybe.</p>
+<p><strong>No identity.</strong> The agent has no cryptographic existence. Clone its token, and nobody can tell you apart.</p>
+<hr />
+<h2 id="heading-why-existing-solutions-dont-fit">Why Existing Solutions Don't Fit</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169529/pact-blog/broken-auth.jpg" alt="Broken Lock" /></p>
+<p>We looked at everything:</p>
+<p>→ <strong>OAuth 2.0</strong> — A delegation framework where the delegator is a browser redirect and the scope is a string the provider invented. Designed for users clicking buttons, not agents operating autonomously.</p>
+<p>→ <strong>API Keys</strong> — Shared secrets with no provenance, no enforced expiry, and no capability narrowing. The skeleton key approach.</p>
+<p>→ <strong>mTLS</strong> — Proves a machine, not a delegation chain. No concept of "who authorized this machine to do this specific thing."</p>
+<p>→ <strong>OIDC for Agents</strong> — Adds agent claims to existing identity providers. Still centralized. Still requires token introspection endpoints.</p>
+<p>None of them answer the three questions every provider should be asking:</p>
+<ol>
+<li><strong>Which human authorized this agent?</strong></li>
+<li><strong>What specifically is the agent allowed to do?</strong></li>
+<li><strong>Can I verify all of this without calling anyone?</strong></li>
+</ol>
+<hr />
+<h2 id="heading-enter-pact">Enter Pact</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169544/pact-blog/pact-protocol.jpg" alt="Pact Protocol" /></p>
+<p>Pact is a <strong>protocol</strong> — not a service, not a platform. Like HTTPS, but for agents proving who they are, who sent them, and what they're allowed to do.</p>
+<p><strong>The core idea is simple:</strong></p>
+<p>Humans sign cryptographic delegations to agents. Agents carry these delegation chains with every request. Providers verify everything locally — no token introspection, no authorization servers, no network calls. Just math.</p>
+<hr />
+<h2 id="heading-how-it-works">How It Works</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169527/pact-blog/architecture.jpg" alt="Architecture" /></p>
+<p>The protocol has five primitives:</p>
+<div class="hn-table">
+<table>
+<thead>
+<tr>
+<td>Primitive</td><td>What It Does</td></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Identity</strong></td><td>Ed25519 keypair. ID = <code>sha256(public_key)</code>. No registration needed.</td></tr>
+<tr>
+<td><strong>Delegation</strong></td><td>Signed capability grant: human → agent, narrowing-only, with expiry</td></tr>
+<tr>
+<td><strong>Capability</strong></td><td>Machine-parseable permission: <code>resource:action,constraint=value</code></td></tr>
+<tr>
+<td><strong>Request Signing</strong></td><td>Per-request Ed25519 signature over method + path + timestamp + body</td></tr>
+<tr>
+<td><strong>Verification</strong></td><td>Walk chain → check sigs → check caps → check freshness. All local.</td></tr>
+</tbody>
+</table>
+</div><h3 id="heading-the-flow">The Flow</h3>
+<pre><code>Human (Alice)
+  │
+  │  Signs delegation: <span class="hljs-string">"Agent X can do api:read, api:write for 1 hour"</span>
+  │
+  ▼
+Agent (carries chain)
+  │
+  │  Makes HTTP request, signs it <span class="hljs-keyword">with</span> own key
+  │  Attaches: identity + delegation chain + signature
+  │
+  ▼
+Provider
+  │
+  │  Walks delegation chain (every signature valid?)
+  │  Capabilities cover <span class="hljs-built_in">this</span> endpoint?
+  │  Request signature fresh?
+  │  → All local. Zero network calls.
+  │
+  ▼
+  Verified. ✓
+</code></pre><hr />
+<h2 id="heading-capability-narrowing-the-key-insight">Capability Narrowing — The Key Insight</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169532/pact-blog/capability-narrowing.jpg" alt="Capability Narrowing" /></p>
+<p>This is what makes Pact fundamentally different from scope-based auth.</p>
+<p>Delegations are <strong>narrowing-only</strong>. A human can delegate <code>storage:*</code> to an agent. That agent can sub-delegate <code>storage:read</code> to a sub-agent. But the sub-agent can never escalate back to <code>storage:write</code>. It's mathematically enforced — not by policy, but by cryptographic signatures.</p>
+<pre><code>Human: storage:*
+  └→ Agent A: storage:read, <span class="hljs-attr">storage</span>:write
+       └→ Agent B: storage:read          ← Can narrow
+       └→ Agent C: storage:<span class="hljs-keyword">delete</span>        ← REJECTED (escalation)
+</code></pre><p>Capabilities support glob patterns, numeric constraints, and hierarchical resources:</p>
+<pre><code>github:pr:create,repo=myorg<span class="hljs-comment">/*           ← Only PRs in myorg repos
+api:write,max_cost&lt;100                  ← Spend limit
+storage:read,path=/data/public/**       ← Path-scoped access</span>
+</code></pre><hr />
+<h2 id="heading-cross-language-proof">Cross-Language Proof</h2>
+<p>We didn't just build a protocol spec. We built two complete implementations — <strong>Go</strong> and <strong>Python</strong> — and proved they work together.</p>
+<p>A Python agent creates an Ed25519 keypair, obtains a delegation from a Go server, signs HTTP requests with the Python SDK, and the Go server verifies every signature. Different languages. Same bytes. Same math.</p>
+<p><strong>The test:</strong> 88 cross-language test vectors validating byte-level compatibility — seed derivation, canonical JSON, capability narrowing, content digests, delegation signatures.</p>
+<p><strong>The demo:</strong> A 7-step end-to-end flow:</p>
+<ol>
+<li>✓ Python agent creates identity</li>
+<li>✓ Obtains delegation from Go server</li>
+<li>✓ Authenticated read (api:read)</li>
+<li>✓ Authenticated write (api:write)</li>
+<li>✓ Correctly denied (lacks deploy:create)</li>
+<li>✓ Ephemeral session identity works</li>
+<li>✓ Sub-delegation (agent → sub-agent) works</li>
+</ol>
+<hr />
+<h2 id="heading-what-makes-pact-different">What Makes Pact Different</h2>
+<div class="hn-table">
+<table>
+<thead>
+<tr>
+<td></td><td>OAuth 2.0</td><td>API Keys</td><td>mTLS</td><td><strong>Pact</strong></td></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Proves delegation chain</strong></td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+<tr>
+<td><strong>Capability narrowing</strong></td><td>Provider-defined</td><td>No</td><td>No</td><td><strong>Delegator-defined</strong></td></tr>
+<tr>
+<td><strong>Per-request signatures</strong></td><td>No (bearer)</td><td>No (shared secret)</td><td>Yes (TLS)</td><td><strong>Yes (app layer)</strong></td></tr>
+<tr>
+<td><strong>Offline verification</strong></td><td>No (introspection)</td><td>No (DB lookup)</td><td>Partial</td><td><strong>Fully local</strong></td></tr>
+<tr>
+<td><strong>Agent-native</strong></td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+<tr>
+<td><strong>Zero dependencies</strong></td><td>Auth server</td><td>Key store</td><td>CA</td><td><strong>Nothing</strong></td></tr>
+</tbody>
+</table>
+</div><hr />
+<h2 id="heading-the-technical-choices">The Technical Choices</h2>
+<p><strong>Ed25519 everywhere.</strong> Fast, small signatures (64 bytes), deterministic, no random number generator needed during signing. The same algorithm Signal, SSH, and WireGuard use.</p>
+<p><strong>Canonical JSON (RFC 8785).</strong> Delegation payloads are serialized deterministically — sorted keys, no whitespace ambiguity. Same bytes in Go and Python. Same bytes on every platform.</p>
+<p><strong>RFC 9421 signatures.</strong> Request signatures cover method, path, authority, timestamp, and body digest. This isn't a custom scheme — it's the IETF standard for HTTP message signatures.</p>
+<p><strong>Zero dependencies in Go.</strong> The entire implementation uses only the Go standard library. No crypto imports beyond <code>crypto/ed25519</code>. No frameworks. No build complexity.</p>
+<hr />
+<h2 id="heading-session-identity-solving-agent-ephemerality">Session Identity — Solving Agent Ephemerality</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1771169548/pact-blog/sessions.jpg" alt="Session Identity" /></p>
+<p>Agents are ephemeral. They spin up, do work, and disappear. But they need stable, verifiable identity during their lifetime.</p>
+<p>Pact introduces <strong>hierarchical session identity:</strong></p>
+<pre><code>Human (long-lived)
+  └→ Root Agent (medium-lived, stored keypair)
+       └→ Session Agent (ephemeral, <span class="hljs-keyword">in</span>-memory only)
+</code></pre><p>Session agents get their own Ed25519 keypair, a delegation from the root, and automatic key zeroization when the session ends. The provider still sees a clean delegation chain back to the human.</p>
+<hr />
+<h2 id="heading-try-it">Try It</h2>
+<p>Pact is open source. MIT licensed. Zero dependencies.</p>
+<pre><code class="lang-bash"><span class="hljs-comment"># Go</span>
+go get github.com/anzal1/pact
+
+<span class="hljs-comment"># Python</span>
+pip install pact-auth
+
+<span class="hljs-comment"># CLI</span>
+pact init --name alice --<span class="hljs-built_in">type</span> human
+pact delegate --to agent.pub --capabilities <span class="hljs-string">"api:read"</span> --ttl 1h
+</code></pre>
+<p>The full spec, implementations, and cross-language demo are at <a target="_blank" href="https://github.com/anzal1/pact">github.com/anzal1/pact</a>.</p>
+<hr />
+<h2 id="heading-the-bigger-picture">The Bigger Picture</h2>
+<p>AI agents are the fastest-growing category of API consumers. They're operating autonomously, at scale, with credentials designed for a different era.</p>
+<p>The question isn't whether agent authentication needs to evolve. It's whether the evolution will be centralized — agents authenticating through platforms, gatekeepers, and introspection endpoints — or decentralized, where any agent can prove its authorization to any provider using nothing but cryptography.</p>
+<p>Pact bets on the latter. No servers. No platforms. No trust assumptions. Just a keypair, a delegation chain, and a signature on every request.</p>
+<hr />
+

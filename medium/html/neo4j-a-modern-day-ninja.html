@@ -1,0 +1,81 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>NEO4j , A Modern day ninja.</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/neo4j-a-modern-day-ninja">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>NEO4j , A Modern day ninja.</h1>
+<p class="meta">2023-01-28 &middot; Databases, Beginner Developers, technology, Web Development, webdev</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1674930666122/9ce8aa6c-726d-4e98-80ad-f9c65fe30a39.png" alt=""></p>
+<h2 id="heading-introduction">INTRODUCTION</h2>
+<p>Neo4j is a highly popular, open-source graph database management system. It is built on the principles of graph theory and allows users to model and query complex relationships between data in a highly intuitive and efficient manner.</p>
+<p>One of the key advantages of Neo4j is its ability to handle large amounts of data and relationships with ease. The graph data model allows for flexible and efficient querying of data, making it a great choice for applications that involve data with many connections and dependencies. Additionally, Neo4j's Cypher query language is designed to be highly readable and easy to use, making it accessible to developers of all skill levels.</p>
+<p>Another major advantage of Neo4j is its scalability. The database can handle millions of nodes and relationships, and can be easily scaled up or down to meet the needs of any application. Additionally, Neo4j's built-in cluster support allows for easy horizontal scaling, making it a great option for organizations that need to handle large amounts of data.</p>
+<p>Neo4j also has a rich ecosystem of tools and libraries to support developers. These include libraries for popular programming languages like Java, Python, and JavaScript, as well as visualization tools and other plugins to help developers work with the data stored in Neo4j.</p>
+<p>One use case of Neo4j is its use in recommendation systems. It can be used to store and query data on users, items, and their interactions, and then use that data to make personalized recommendations to users. Additionally, Neo4j can be used in fraud detection and network analysis, as it can easily store and query data on connections between entities.</p>
+<p>Overall, Neo4j is a powerful and versatile graph database management system that is well-suited to a wide range of use cases. Its ability to handle large amounts of data and relationships, along with its intuitive and easy-to-use query language, make it a great choice for developers looking to build applications that involve complex data. Additionally, its scalability and rich ecosystem of tools and libraries make it a great option for organizations that need to handle large amounts of data.</p>
+<h2 id="heading-architecture">ARCHITECTURE</h2>
+<p>Neo4j's architecture is based on a master-slave model, where one server acts as the master and the other servers act as slaves. The master server is responsible for handling all write operations, while the slaves handle all read operations. This allows for highly efficient and scalable operation, as the read and write operations can be handled by different servers, allowing for better utilization of resources.</p>
+<p>The data in Neo4j is stored in a format called Property Graph. A property graph is a mathematical graph, where the nodes represent entities and the edges represent the relationships between them. Each node and edge has a set of properties, which are key-value pairs that provide additional information about the nodes and edges.</p>
+<p>The nodes and edges in Neo4j are stored in a highly optimized data structure called a native store. This allows for fast and efficient storage and retrieval of data, and also enables Cypher, Neo4j's query language, to perform complex queries on the data with high performance. Additionally, Neo4j also support indexing and querying of the data to optimize the performance of the querying.</p>
+<p>In summary, Neo4j's architecture is based on a master-slave model, which allows for highly efficient and scalable operation. The data is stored in the property graph format, which consists of nodes, edges and properties, and it is optimized for fast and efficient storage and retrieval of data. Additionally, the native store and querying capabilities allow for complex queries on the data with high performance.</p>
+<p><img src="https://dist.neo4j.com/wp-content/uploads/20220208132007/1_o9P8rcl2BPMwnjrg8lQSJQ.jpeg" alt="enter image description here" /></p>
+<h2 id="heading-some-usecases-and-examples">SOME USECASES AND EXAMPLES</h2>
+<p>Cypher is the query language used in Neo4j to query and manipulate the data stored in the graph. Here are some examples of Cypher syntax and code:</p>
+<ol>
+<li>Creating nodes and relationships: <pre><code>CREATE (:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"John"</span>, <span class="hljs-attr">age</span>: <span class="hljs-number">30</span> })
+CREATE (:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"Jane"</span>, <span class="hljs-attr">age</span>: <span class="hljs-number">25</span> })
+CREATE (:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"Bob"</span>, <span class="hljs-attr">age</span>: <span class="hljs-number">35</span> })
+CREATE (j:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"John"</span>, <span class="hljs-attr">age</span>: <span class="hljs-number">30</span> })-[:KNOWS]-&gt;(b:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"Bob"</span>, <span class="hljs-attr">age</span>: <span class="hljs-number">35</span> })
+</code></pre><blockquote>
+<p>In this example, we're creating three nodes with the label "Person" and properties "name" and "age". Then we're creating a relationship of type "KNOWS" between the nodes "John" and "Bob".</p>
+</blockquote>
+</li>
+</ol>
+<ol>
+<li><p>Retrieving data:</p>
+<pre><code> MATCH (p:Person) RETURN p
+</code></pre><blockquote>
+<p>This query retrieves all the nodes with the label "Person" and returns the nodes.</p>
+</blockquote>
+</li>
+<li><p>Updating data:</p>
+<pre><code> MATCH (p:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"John"</span> }) SET p.age = <span class="hljs-number">32</span>
+</code></pre><blockquote>
+<p>This query matches the node with the label "Person" and the property "name" equal to "John" and sets the "age" property to 32</p>
+</blockquote>
+</li>
+<li><p>Deleting data:</p>
+<pre><code>MATCH (p:Person { <span class="hljs-attr">name</span>: <span class="hljs-string">"John"</span> }) DELETE p
+</code></pre><blockquote>
+<p>This query matches the node with the label "Person" and the property "name" equal to "John" and deletes the node. </p>
+</blockquote>
+</li>
+<li><p>Filtering data:</p>
+<pre><code>MATCH (p:Person) WHERE p.age &gt; <span class="hljs-number">30</span> RETURN p
+</code></pre><blockquote>
+<p>This query matches all the nodes with the label "Person" and filters the results to only return nodes where the "age" property is greater than 30.</p>
+</blockquote>
+</li>
+</ol>
+<p>These are just a few examples of Cypher syntax and code. Cypher is a very powerful and flexible language, and it can be used to express a wide range of queries and manipulations on the data stored in Neo4j. Additionally, Cypher supports indexing and querying, which can be used to optimize the performance of queries.</p>
+<p><img src="https://dist.neo4j.com/wp-content/uploads/20160415155725/graph-database-rules-engine.png" alt="enter image description here" /></p>
+<h2 id="heading-the-deeper-the-better">THE DEEPER THE BETTER</h2>
+<p>One of the key components of Neo4j's architecture is the storage layer. The storage layer is responsible for persisting the graph data and managing the relationships between nodes and edges. Neo4j uses a native storage format, called the native store, which is optimized for fast and efficient storage and retrieval of graph data. The native store uses a memory-mapped file system to store the data on disk, which allows for fast access to the data, even when working with very large datasets.</p>
+<p>Another important component of Neo4j's architecture is the query layer. The query layer is responsible for processing Cypher queries, Neo4j's query language, and providing the results to the application. Cypher is designed to be highly readable and easy to use, and it allows developers to express complex queries in a natural and intuitive way. Cypher also supports indexing and querying, to optimize the performance of the querying.</p>
+<p>The Neo4j's architecture also has a caching layer, which is responsible for caching frequently accessed data in memory to improve query performance. The caching layer uses a Least Recently Used (LRU) algorithm to determine which data to cache and when to evict data from the cache. This caching layer can significantly improve query performance, particularly when working with large datasets.</p>
+<p>In addition to the above, Neo4j also has a robust security model that allows for granular control over access to data. It has built-in support for authentication and authorization, and it allows for the creation of custom roles and permissions. This makes it suitable for use in a wide range of applications, including those with sensitive data.</p>
+<p>Another important aspect of Neo4j is its scalability. Neo4j's architecture is designed to scale horizontally, which means that it can easily be scaled out by adding more servers to the cluster. This allows Neo4j to handle very large datasets and high query loads, making it suitable for use in high-traffic applications and big data scenarios.</p>
+<p>In summary, Neo4j's architecture is designed to provide fast and efficient storage and retrieval of graph data, while also providing a robust and easy-to-use query language. The native storage format, caching layer, and query layer work together to provide high performance, even when working with very large datasets. Additionally, the architecture is designed to scale horizontally, making it suitable for use in high-traffic applications and big data scenarios, and the security model provides granular control over access to data.</p>
+<p><img src="https://dist.neo4j.com/wp-content/uploads/20160317110028/fitness-program-nutrition-recommendations.png" alt="enter image description here" /></p>
+

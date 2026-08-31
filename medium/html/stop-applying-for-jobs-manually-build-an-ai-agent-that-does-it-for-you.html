@@ -1,0 +1,176 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Stop Applying for Jobs Manually: Build an AI Agent That Does It for You</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/stop-applying-for-jobs-manually-build-an-ai-agent-that-does-it-for-you">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>Stop Applying for Jobs Manually: Build an AI Agent That Does It for You</h1>
+<p class="meta">2025-07-12 &middot; software development, AI, automation, Python, jobs</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1752323596756/f9171122-fbed-431e-9945-17a6926403d0.png" alt=""></p>
+<p>Are you tired of the soul-crushing routine of job hunting? The endless cycle of finding a listing, filling out the <em>same</em> form fields, and uploading your resume for the hundredth time? It feels like a full-time job just to apply for a job.</p>
+<p>What if you could hand off that entire process to a smart AI agent? An assistant that opens your browser, searches for jobs on LinkedIn, intelligently fills out each application, and works 24/7 on your behalf.</p>
+<p>This isn't a futuristic dream. It’s possible right now with a powerful open-source tool called <a target="_blank" href="https://github.com/browser-use/web-ui"><strong>Browser Use</strong></a>. In this guide, I'll show you exactly how to build your own personal AI job-hunting assistant by teaching you how to write the perfect "master prompt" to command your agent.</p>
+<p>Let's dive in.</p>
+<h3 id="heading-part-1-your-technical-toolkit-amp-setup">Part 1: Your Technical Toolkit &amp; Setup</h3>
+<p>First, we need to get the <code>Browser Use</code> project set up on your computer. This part involves using the command line and requires that you have <a target="_blank" href="https://git-scm.com/"><strong>Git</strong></a> and <a target="_blank" href="https://www.python.org/downloads/"><strong>Python</strong></a> installed.</p>
+<p><strong>Step 1: Clone the Project</strong></p>
+<p>We need to download the project files from GitHub. Open your terminal and run these commands one by one:</p>
+<p>Bash</p>
+<pre><code class="lang-powershell"><span class="hljs-comment"># Clone the repository for the web interface</span>
+git clone https://github.com/browser<span class="hljs-literal">-use</span>/web<span class="hljs-literal">-ui</span>.git
+
+<span class="hljs-comment"># Move into the new project folder</span>
+<span class="hljs-built_in">cd</span> browser<span class="hljs-literal">-use</span><span class="hljs-literal">-web</span><span class="hljs-literal">-ui</span>
+</code></pre>
+<p><strong>Step 2: Create and Activate a Python Environment</strong></p>
+<p>A virtual environment is like a clean, isolated workspace for our project's code.</p>
+<p>Bash</p>
+<pre><code class="lang-powershell"><span class="hljs-comment"># Create the environment</span>
+python3 <span class="hljs-literal">-m</span> venv .venv
+
+<span class="hljs-comment"># Activate the environment (On Mac/Linux)</span>
+source .venv/bin/activate
+
+<span class="hljs-comment"># Or activate it on Windows</span>
+.venv\Scripts\activate
+</code></pre>
+<p>You'll know it's working when you see <code>(.venv)</code> at the start of your terminal prompt.</p>
+<p><strong>Step 3: Install the Tools</strong></p>
+<p>Now we install all the necessary packages and the browser automation framework, <a target="_blank" href="https://playwright.dev/"><strong>Playwright</strong></a>.</p>
+<p>Bash</p>
+<pre><code class="lang-powershell"><span class="hljs-comment"># Install all the required Python packages</span>
+pip install <span class="hljs-literal">-r</span> requirements.txt
+
+<span class="hljs-comment"># Install the browsers for the agent to control</span>
+playwright install
+</code></pre>
+<h3 id="heading-part-2-giving-your-agent-a-brain-with-ai">Part 2: Giving Your Agent a Brain with AI</h3>
+<p>Our agent needs an AI model to think and follow instructions. We'll use the free tier of a powerful model through a service called <a target="_blank" href="https://openrouter.ai/"><strong>OpenRouter</strong></a>.</p>
+<p><strong>Step 4: Configure Your API Keys</strong></p>
+<p>API keys are like secret passwords that let our script talk to the AI model.</p>
+<ol>
+<li><p>In the project folder, find the file named <code>.env.example</code> and make a copy of it. Rename the copy to just <code>.env</code>.</p>
+</li>
+<li><p>Go to <a target="_blank" href="https://openrouter.ai/models"><strong>OpenRouter.ai</strong></a> and sign up.</p>
+</li>
+<li><p>Find a capable free model (like <strong>DeepSeek Coder</strong> or <strong>Google's Gemma</strong>).</p>
+</li>
+<li><p>Go to your <strong>Keys</strong> page, create a new key, name it, and copy the key itself.</p>
+</li>
+<li><p>Open your new <code>.env</code> file and paste in your key and the OpenRouter Base URL. It should look like this:</p>
+</li>
+</ol>
+<p>Code snippet</p>
+<pre><code class="lang-xml">OPENAI_API_KEY="paste_your_secret_api_key_here"
+OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+</code></pre>
+<h3 id="heading-part-3-launch-and-test-run">Part 3: Launch and Test Run</h3>
+<p>Let's fire it up to make sure everything is connected correctly.</p>
+<p><strong>Step 5: Launch the Web Interface</strong></p>
+<p>In your terminal (with the <code>.venv</code> still active), run this command:</p>
+<p>Bash</p>
+<pre><code class="lang-powershell">python <span class="hljs-literal">-m</span> uvicorn main:app -<span class="hljs-literal">-reload</span>
+</code></pre>
+<p>Your terminal will give you a local URL like <code>http://127.0.0.1:8000</code>. Copy it and open it in your browser.</p>
+<p><strong>Step 6: Run Your First Test</strong></p>
+<ol>
+<li><p>On the <code>Browser Use</code> page, click <strong>"LM Settings"</strong>.</p>
+</li>
+<li><p>For the <strong>Model Name</strong>, enter the name of the model you chose, like <code>deepseek/deepseek-coder</code>. Save it.</p>
+</li>
+<li><p>Go back to the <strong>"Run Agent"</strong> tab. There's a default test task already there.</p>
+</li>
+<li><p>Click <strong>"Run Agent"</strong>.</p>
+</li>
+</ol>
+<p>A new browser window should pop up and perform a quick Google search automatically. Success! You have a working AI agent ready for your commands.</p>
+<h3 id="heading-part-4-the-core-crafting-the-perfect-prompt-for-your-agent">Part 4: The Core - Crafting the Perfect Prompt for Your Agent</h3>
+<p>This is where the magic happens. We will write a clear, step-by-step "master prompt" to command our agent. For complex prompts, using a powerful AI assistant like <a target="_blank" href="https://chatgpt.com/"><strong>ChatGPT</strong></a> can help you refine your logic and wording.</p>
+<p>Here’s how to structure your prompt for the best results.</p>
+<p>1. Define the Goal and Starting Point</p>
+<p>Start with a clear objective.</p>
+<ul>
+<li><p><strong>Goal:</strong> My goal is to apply for jobs on LinkedIn.</p>
+</li>
+<li><p><strong>Starting URL:</strong> Start at this page: <code>https://www.linkedin.com/jobs/search/?keywords=Product%20Manager&amp;location=Remote</code></p>
+</li>
+</ul>
+<p>2. Set the Rules of Engagement</p>
+<p>Tell the agent exactly what to look for and what to avoid. This is crucial for getting relevant applications.</p>
+<ul>
+<li><p><strong>Inclusion Rules:</strong></p>
+<ul>
+<li><p>The job title must include "Product Manager" or "Product Owner".</p>
+</li>
+<li><p>The location must be "Remote".</p>
+</li>
+<li><p>Only apply to jobs posted in the "Past week".</p>
+</li>
+</ul>
+</li>
+<li><p><strong>Exclusion Rules (Just as important!):</strong></p>
+<ul>
+<li><p>Do NOT apply if the title includes "Senior", "Lead", or "Principal".</p>
+</li>
+<li><p>Do NOT apply to jobs from the companies "Meta" or "Google".</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>3. Write the Step-by-Step Action Sequence</p>
+<p>This is the main algorithm. Write it like you're explaining it to a person.</p>
+<ul>
+<li><p><strong>Action Plan:</strong></p>
+<ol>
+<li><p>Navigate to the Starting URL.</p>
+</li>
+<li><p>Go through each job listing on the page one by one.</p>
+</li>
+<li><p>For each job, check if it matches my Inclusion and Exclusion rules.</p>
+</li>
+<li><p>If it is a match, click on the job listing.</p>
+</li>
+<li><p>Click the "Easy Apply" button.</p>
+</li>
+<li><p>The application form will now be open. Use the following information to fill it out:</p>
+<ul>
+<li><p>My full name is: Jane Doe</p>
+</li>
+<li><p>My email is: jane.doe@email.com</p>
+</li>
+<li><p>My phone number is: 123-456-7890</p>
+</li>
+<li><p>My resume is located at: <code>C:\Users\JaneDoe\Documents\resume_v2.pdf</code></p>
+</li>
+</ul>
+</li>
+<li><p>If you encounter a question like "Years of experience with SaaS products?", answer "5".</p>
+</li>
+<li><p>After filling all required fields, click the button to "Review" and then "Submit application".</p>
+</li>
+<li><p>Close the job tab and move to the next listing on the search results page.</p>
+</li>
+</ol>
+</li>
+</ul>
+<p><strong>Putting It All Together</strong></p>
+<p>Combine these sections into one big prompt inside the "Task Description" box in <code>Browser Use</code>. The more detailed you are, the better your agent will perform.</p>
+<h3 id="heading-part-5-unleash-your-ai-job-hunter">Part 5: Unleash Your AI Job Hunter!</h3>
+<ol>
+<li><p><strong>Copy and paste your complete, detailed prompt</strong> into the <code>Browser Use</code> interface.</p>
+</li>
+<li><p>Click <strong>"Run Agent"</strong>.</p>
+</li>
+</ol>
+<p>Now, sit back and watch. The browser window will spring to life, navigating, analyzing, and applying on your behalf, all based on the precise instructions you wrote. You've successfully delegated one of the most tedious tasks in modern life to your own personal AI agent.</p>
+

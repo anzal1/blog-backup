@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>UnClaude: Building an Open-Source AI Engineer with No Model Lock-In</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/unclaude-building-an-open-source-ai-engineer-with-no-model-lock-in">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>UnClaude: Building an Open-Source AI Engineer with No Model Lock-In</h1>
+<p class="meta">2026-01-10 &middot; AI, claude.ai, automation, Web Development</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1768056976004/132e96c6-678c-47fa-9640-c6909e3cde45.jpeg" alt=""></p>
+<p>I believe the future of software engineering isn't just "AI-assisted"—it’s <strong>agentic</strong>. We are moving away from simple chat boxes and toward agents that can plan, execute, and verify tasks autonomously.</p>
+<p>While the market is flooded with proprietary tools, I wanted to build something that prioritized two things: <strong>total model flexibility</strong> and <strong>local control</strong>.</p>
+<p>That experiment became <strong>UnClaude</strong>.</p>
+<hr />
+<h2 id="heading-what-is-unclaude">What is UnClaude?</h2>
+<p>UnClaude is a CLI-based autonomous pair programmer. It sits between you and your Large Language Model (LLM) of choice, providing the agent with a "body" to interact with your local environment through three core tools:</p>
+<ul>
+<li><p>📂 <strong>File System</strong>: Permission-based reading and editing of your codebase.</p>
+</li>
+<li><p>💻 <strong>Terminal</strong>: The ability to run compilers, linters, and test suites securely.</p>
+</li>
+<li><p>🌐 <strong>Browser</strong>: Real-time verification of web applications to "see" the UI.</p>
+</li>
+</ul>
+<p>Because it runs locally, your code stays on your machine, and you maintain full oversight of every command the agent executes.</p>
+<hr />
+<h2 id="heading-the-core-principles">The Core Principles</h2>
+<h3 id="heading-1-model-independence-break-the-lock-in">1. Model Independence (Break the Lock-in)</h3>
+<p>Different tasks require different "brains." UnClaude is built on top of <code>LiteLLM</code>, allowing you to hot-swap providers instantly. Need the 2M context window of <strong>Gemini 2.5 Pro</strong>? No problem. Prefer the logic of <strong>GPT-4o</strong> or the privacy of a local <strong>Llama 3</strong> via Ollama? UnClaude supports them all.</p>
+<h3 id="heading-2-autonomy-via-feedback-loops-ralph-mode">2. Autonomy via Feedback Loops ("Ralph Mode")</h3>
+<p>Writing code is the easy part; getting it to compile and pass CI/CD is where the time goes. UnClaude features <strong>"Ralph Mode,"</strong> a self-correcting loop. When the agent writes code, it doesn't just stop. It runs your test suite, analyzes the exit codes and error logs, and iteratively fixes its own mistakes until the tests pass.</p>
+<h3 id="heading-3-integrated-project-memory">3. Integrated Project Memory</h3>
+<p>An assistant is only as good as its context. UnClaude uses a local vector database to index your project and conversation history. This means the agent "remembers" your architectural patterns and previous instructions, saving you from having to repeat yourself in every new session.</p>
+<hr />
+<h2 id="heading-why-open-source">Why Open Source?</h2>
+<p>I’ve released UnClaude under the <strong>Apache 2.0 license</strong>. Developer tools should be transparent. By making it open source, you can inspect the prompts, modify the agent's logic, and build custom tools that fit your specific workflow.</p>
+<hr />
+<h2 id="heading-try-it-out">Try it Out</h2>
+<p>UnClaude is available now on PyPI. You can get up and running in seconds, or you can visit: <a target="_blank" href="https://github.com/anzal1/unclaude">https://github.com/anzal1/unclaude</a></p>
+<pre><code class="lang-bash">pipx install unclaude
+unclaude login
+</code></pre>
+

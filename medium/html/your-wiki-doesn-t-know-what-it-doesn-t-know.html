@@ -1,0 +1,199 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Your Wiki Doesn&#x27;t Know What It Doesn&#x27;t Know</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/your-wiki-doesn-t-know-what-it-doesn-t-know">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>Your Wiki Doesn&#x27;t Know What It Doesn&#x27;t Know</h1>
+<p class="meta">2026-04-15 &middot; llm, Wikipedia, AI, knowledge, software development</p>
+<p><img src="https://cdn.hashnode.com/uploads/covers/63d276afa763c508ab870f55/3792e842-e3dd-4002-83e9-b14a7b71c14d.png" alt=""></p>
+<p><em>Why every LLM-powered knowledge base is broken the same way — and what we built instead</em></p>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182710/quicky-wiki-blog/hero-vangogh.jpg" alt="Hero Image" /></p>
+<hr />
+<h2>The Karpathy Moment</h2>
+<p>On April 4, 2026, Andrej Karpathy published a <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">gist</a> describing a pattern: use an LLM to maintain a personal wiki from raw source documents. Within 48 hours: 5,000+ stars, 1,300+ forks, and a dozen implementations.</p>
+<p>Everyone rushed to build it. We looked at what they all built — and noticed they all missed the same things.</p>
+<hr />
+<h2>The Six Gaps Nobody Filled</h2>
+<p>Every implementation that appeared — MindOS, agent-wiki, obsidian-wiki, second-brain, cerefox, LLM-wiki — shares the same blind spots:</p>
+<p><strong>1. Static snapshots.</strong> The wiki is a pile of current-state markdown. You can't ask "what did I believe about X last month?" or "how has my thesis evolved?" Git blame shows file changes. It doesn't show <em>belief changes</em>.</p>
+<p><strong>2. Binary confidence.</strong> A fact is either in the wiki or it isn't. But some claims are backed by five peer-reviewed papers and others by a single tweet. There's no way to know which is which.</p>
+<p><strong>3. No metabolism.</strong> Once a page is written, it sits there forever. That competitive analysis from three months ago? Probably stale. That API reference from last week? Still fresh. Nothing models freshness or decay.</p>
+<p><strong>4. No gap discovery.</strong> Lint finds broken links. It doesn't find <em>blind spots</em>. If your wiki covers ML architectures but never mentions training data quality, no existing system will notice.</p>
+<p><strong>5. No knowledge diffs.</strong> When you ingest a new source, you get updated pages. You don't get "before this paper, you believed X; now the evidence suggests Y; these 3 claims are stronger, this 1 is weaker."</p>
+<p><strong>6. Single output format.</strong> Everything renders to markdown. But knowledge has many useful forms — flashcards, slide decks, interactive graphs, timelines, fine-tuning datasets.</p>
+<p>These aren't edge cases. These are fundamental properties of how human knowledge actually works. And no one was building for them.</p>
+<hr />
+<h2>The Core Thesis</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182713/quicky-wiki-blog/knowledge-compiler-vangogh.jpg" alt="Knowledge Compiler" /></p>
+<blockquote>
+<p>A wiki is not a document store. It's a <strong>knowledge compiler</strong> — a system that takes raw sources as input and produces <em>verified, temporally-aware, confidence-scored, interlinked knowledge</em> as output, compilable to any format.</p>
+</blockquote>
+<p>That's the idea behind <a href="https://github.com/anzal1/quicky-wiki">Quicky Wiki</a>. An open-source, CLI-first tool that treats your knowledge the way a compiler treats code: with rigor, with type safety, and with the understanding that correctness is a spectrum, not a binary.</p>
+<hr />
+<h2>How It Works</h2>
+<pre><code>Source Document (PDF, URL, markdown, notes)
+     ↓
+LLM Extraction → Claims (atomic, verifiable, with confidence scores)
+     ↓                               ↓
+Knowledge Graph (SQLite)          Epistemic Events (temporal log)
+     ↓
+Compiled Outputs → Wiki pages, slides, flashcards, graph, timeline
+     ↓
+Dashboard (interactive visualization + chat)
+</code></pre>
+<p>You drop a document into <code>raw/</code>. The compiler breaks it into atomic <em>claims</em> — not paragraphs, not summaries, but individual verifiable statements. Each claim gets a confidence score based on source quality, corroboration, and recency. These claims link into a knowledge graph that tracks how they relate to each other.</p>
+<pre><code class="language-bash">npx quicky-wiki init --name "My Research"
+qw ingest paper.pdf --type paper --quality peer-reviewed
+qw ingest https://arxiv.org/abs/2401.12345
+qw serve    # → http://localhost:3737
+</code></pre>
+<p>Three commands and you have a confidence-scored knowledge base with an interactive dashboard.</p>
+<hr />
+<h2>Confidence Isn't a Feature. It's the Architecture.</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182706/quicky-wiki-blog/confidence-vangogh.jpg" alt="Confidence Scoring" /></p>
+<p>Every claim in Quicky Wiki carries a confidence score from 0.0 to 1.0, computed from:</p>
+<ul>
+<li><strong>Source count</strong> — More independent sources confirming a claim → higher confidence</li>
+<li><strong>Source quality</strong> — A peer-reviewed paper weighs more than a blog post, which weighs more than a tweet</li>
+<li><strong>Recency</strong> — Newer sources are weighted higher for fast-moving fields</li>
+<li><strong>Corroboration</strong> — Do your sources agree or contradict?</li>
+<li><strong>Dependency depth</strong> — If a claim depends on other claims, confidence compounds downward</li>
+</ul>
+<p>This isn't decoration. It's the foundation. When you query your wiki, you can ask:</p>
+<pre><code class="language-bash">qw query --min-confidence 0.8 "quantum error correction"   # only high-confidence claims
+qw query --contested "scaling laws"                         # where sources disagree
+qw claims --weakest --limit 10                              # your shakiest beliefs
+</code></pre>
+<p>When a foundational claim gets weakened by new evidence, Quicky Wiki doesn't just update that one claim. It runs a <strong>cascade</strong> — tracing every downstream claim that depends on it and adjusting their confidence accordingly. One challenged assumption can ripple through your entire knowledge graph.</p>
+<hr />
+<h2>Knowledge That Decays, Resurfaces, and Challenges Itself</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182715/quicky-wiki-blog/metabolism-vangogh.jpg" alt="Metabolism" /></p>
+<p>We call it the <strong>metabolism engine</strong>. It's what keeps a knowledge base alive instead of slowly rotting.</p>
+<p><strong>Decay.</strong> Claims that haven't been reinforced by new sources gradually lose confidence. That competitive analysis from six months ago auto-flags as potentially stale. This isn't arbitrary — it models the real-world phenomenon that knowledge has a half-life.</p>
+<p><strong>Resurfacing.</strong> Like spaced repetition for your entire wiki. The system surfaces concepts you haven't engaged with recently: "You haven't revisited your notes on X in 45 days. 3 new sources have appeared since then."</p>
+<p><strong>Red-teaming.</strong> Periodic adversarial self-critique powered by the LLM: "What claims in this wiki would a domain expert challenge? What's the strongest counter-argument to your central thesis?"</p>
+<pre><code class="language-bash">qw metabolism --report        # full knowledge health report
+qw metabolism --decay         # apply confidence decay
+qw metabolism --resurface     # find stale claims worth revisiting
+qw metabolism --redteam       # challenge your high-confidence claims
+</code></pre>
+<pre><code>┌─────────────────────────────────────────────┐
+│  KNOWLEDGE HEALTH REPORT                    │
+├─────────────────────────────────────────────┤
+│  Total claims: 847                          │
+│  High confidence (&gt;0.8): 312 (37%)          │
+│  Medium (0.4-0.8): 419 (49%)               │
+│  Low (&lt;0.4): 116 (14%)                      │
+│                                             │
+│  ⚠️  Stale (&gt;30 days, no reinforcement): 23 │
+│  ⚡ Contested (sources disagree): 8          │
+│  🔗 Cascade risk (depends on weak claims): 5│
+│  🕳️  Gaps detected: 12                      │
+└─────────────────────────────────────────────┘
+</code></pre>
+<p>No other LLM wiki does this. Most don't even have the concept.</p>
+<hr />
+<h2>Differential Ingestion: See What Changed in Your Understanding</h2>
+<p>When you ingest a new source, the system doesn't silently update pages. It shows you a <strong>knowledge diff</strong> — exactly how your understanding shifted:</p>
+<pre><code>$ qw ingest paper-new-scaling-laws.pdf
+
+📄 Ingested: "Scaling Laws Revisited" (Chen et al., 2026)
+
+KNOWLEDGE DIFF:
+━━━━━━━━━━━━━━
+  REINFORCED (3 claims):
+  ✅ "Loss scales as power law with compute" — confidence 0.72 → 0.88
+  ✅ "Data quality matters more than quantity" — confidence 0.65 → 0.78
+
+  CHALLENGED (1 claim):
+  ⚠️  "Scaling laws plateau above 1T parameters"
+      Your wiki says: plateau likely (confidence 0.60)
+      This paper says: no plateau observed up to 10T
+      New confidence: 0.35
+      → 2 downstream claims affected
+
+  NEW CONCEPTS (2):
+  🆕 "Inference-time scaling" — new concept page created
+  🆕 "Test-time compute" — linked to existing "inference optimization" page
+
+  GAPS IDENTIFIED (1):
+  🕳️  Paper references "mixture of experts efficiency" — no wiki page exists
+</code></pre>
+<p>Every ingestion is a learning event. And the system makes the learning visible.</p>
+<hr />
+<h2>The Discovery Engine: What Should You Learn Next?</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182708/quicky-wiki-blog/discovery-vangogh.jpg" alt="Discovery" /></p>
+<p>Most wikis wait passively for you to feed them. Quicky Wiki identifies what's missing and suggests where to look:</p>
+<pre><code class="language-bash">qw discover --mode gaps            # what's missing in your knowledge?
+qw discover --mode horizon         # frontier topics you should explore
+qw discover --mode bridges         # connections between distant concepts
+qw discover --mode contradictions  # conflicting claims to resolve
+</code></pre>
+<p><strong>Gap analysis</strong> finds blind spots: "Your wiki discusses concepts A, B, and D but never C, which connects them."</p>
+<p><strong>Horizon scanning</strong> looks ahead: "Based on your research interests, here are 5 recent papers you should consider ingesting."</p>
+<p><strong>Bridge detection</strong> finds cross-domain connections: "Your neuroscience notes and your ML notes both discuss attention mechanisms but never cross-reference."</p>
+<hr />
+<h2>Compile Your Knowledge Into Anything</h2>
+<p>The wiki is the source of truth. But the output doesn't have to be markdown:</p>
+<pre><code class="language-bash">qw compile slides --topic "quantum error correction"    # Marp slide deck
+qw compile anki --topic "ML scaling laws"               # Anki flashcards
+qw compile graph --interactive                          # D3 knowledge graph
+qw compile timeline --topic "quantum computing"         # temporal visualization
+qw compile markdown                                     # Obsidian-compatible wiki
+</code></pre>
+<p>Same knowledge. Different lenses. A concept you explore as a graph, study as flashcards, and present as slides — all generated from the same underlying claims.</p>
+<hr />
+<h2>Built for AI Agents</h2>
+<p><img src="https://res.cloudinary.com/dho3mopsg/image/upload/v1776182714/quicky-wiki-blog/mcp-vangogh.jpg" alt="MCP Server" /></p>
+<p>Quicky Wiki includes a built-in <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> server. Point Claude Desktop, Cursor, or any MCP client at it:</p>
+<pre><code class="language-bash">qw mcp              # stdio mode (for Claude Desktop, etc.)
+qw mcp --http       # HTTP mode for remote agents
+</code></pre>
+<p>Your AI agent can query the knowledge base, search across content with full-text search, list and filter entities, ingest new sources, and update metadata — all through the MCP protocol. The wiki becomes a first-class tool in any AI agent's toolkit.</p>
+<p>You can also embed the engine directly in your Node.js application:</p>
+<pre><code class="language-javascript">import { KnowledgeStore, ingestSource, queryKnowledge } from "quicky-wiki";
+
+const store = new KnowledgeStore("./data/graph.sqlite");
+await ingestSource(store, "research-paper.pdf", { kind: "paper" });
+const answer = await queryKnowledge(store, "What are the key findings?");
+// → Answer with confidence scores and citations
+</code></pre>
+<p>No subprocess, no server, no MCP overhead. Just the knowledge compiler as a library.</p>
+<hr />
+<h2>The Dashboard</h2>
+<p>The web dashboard gives you everything at a glance:</p>
+<ul>
+<li><strong>Knowledge Graph</strong> — Interactive canvas visualization. Hover to see connections, click to explore.</li>
+<li><strong>Claims</strong> — Every extracted claim with its confidence score, sources, and history.</li>
+<li><strong>Pages</strong> — Wiki pages grouped by entity kind. Obsidian-style wikilinks work: <code>[[Page Title]]</code> is clickable.</li>
+<li><strong>Timeline</strong> — Temporal view of how your knowledge has evolved.</li>
+<li><strong>Health</strong> — Stale claims, contradictions, gaps, cascade risks.</li>
+<li><strong>Ask Wiki</strong> — Chat with your knowledge base. Get answers with confidence scores and source citations.</li>
+</ul>
+<hr />
+<h2>Why This Matters</h2>
+<p>We're in an era where LLMs can generate convincing text about anything. That's the problem — <em>everything sounds equally true</em>. There's no built-in mechanism to tell you "this fact is well-supported" vs. "this fact came from one source and contradicts newer evidence."</p>
+<p>Quicky Wiki doesn't solve hallucination. What it does is make the <em>epistemic status</em> of your knowledge explicit. Every claim has a provenance trail. Every confidence score has a reason. When something decays, you know. When something contradicts, you see it. When there's a gap, the system finds it.</p>
+<p>Knowledge management shouldn't be a filing system. It should be a living process — one that strengthens over time, weakens when evidence changes, and tells you honestly what it doesn't know.</p>
+<hr />
+<h2>Get Started</h2>
+<pre><code class="language-bash">npm install -g quicky-wiki
+qw init --name "My Research"
+qw ingest your-sources/
+qw serve
+</code></pre>
+<p>Open <code>http://localhost:3737</code>. That's it.</p>
+<p>The source is at <a href="https://github.com/anzal1/quicky-wiki">github.com/anzal1/quicky-wiki</a>. MIT licensed. Stars and contributions welcome.</p>
+<hr />
+

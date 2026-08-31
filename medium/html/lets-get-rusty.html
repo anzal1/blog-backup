@@ -1,0 +1,143 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Let&#x27;s Get Rusty</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/lets-get-rusty">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>Let&#x27;s Get Rusty</h1>
+<p class="meta">2023-03-08 &middot; Rust, Programming Blogs, coding, technology, Web Development</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1678290018820/c5bd3e21-0607-49bc-ba9e-f74c8e4ad86e.webp" alt=""></p>
+<h3 id="heading-what-the-heck-is-rust">What the heck is rust ?</h3>
+<p>Rust is a programming language that was initially developed by Mozilla and released to the public in 2010. It was designed to be a fast, efficient, and safe alternative to other system programming languages like C++ and C. Rust's popularity has been increasing rapidly in recent years, and for good reason. In this blog, we'll dive deep into Rust and explore its advantages over other languages.</p>
+<ol>
+<li><p>Memory safety and thread safety One of the most significant advantages of Rust is its strong emphasis on memory safety and thread safety. Rust's ownership and borrowing system ensures that memory is managed safely and efficiently, which can help prevent common bugs like null pointers, buffer overflows, and use-after-free errors. The language's type system also helps ensure that code is thread-safe, meaning that it can be run concurrently without data races.</p>
+</li>
+<li><p>High performance Rust is designed to be a high-performance language, which makes it an excellent choice for system-level programming. Its syntax and semantics are designed to optimize code, and it provides direct access to hardware resources, making it faster than many other languages. Rust is also designed to work well with multi-core processors, making it ideal for high-performance computing and parallel processing.</p>
+</li>
+<li><p>Easy to learn Despite its advanced features, Rust is surprisingly easy to learn. Its syntax is clean and easy to understand, and its compiler provides helpful error messages that can make it easier to fix issues in code. Rust also has an active community of developers who are eager to help new users, making it a welcoming language for beginners.</p>
+</li>
+<li><p>Cross-platform support Rust is a cross-platform language, meaning that it can be used to develop software for a wide range of platforms, including Windows, macOS, Linux, and even embedded systems. This makes it an ideal choice for developers who need to build applications that can run on multiple platforms.</p>
+</li>
+<li><p>Large and growing community Rust has a large and growing community of developers who are working on a wide range of projects. This community provides a wealth of resources, including libraries, frameworks, and tools, making it easier for developers to get started with Rust and build complex applications.</p>
+</li>
+</ol>
+<p>In conclusion, Rust is a powerful programming language that offers a range of benefits over other languages. Its emphasis on memory and thread safety, high performance, ease of use, cross-platform support, and growing community make it an excellent choice for system-level programming, high-performance computing, and more. If you're looking for a modern, efficient, and safe programming language, Rust is definitely worth considering.</p>
+<p><img src="https://doc.rust-lang.org/book/img/ferris/does_not_compile.svg" alt class="image--center mx-auto" /></p>
+<h3 id="heading-too-much-theory-show-me-some-code">Too much theory show me some code :</h3>
+<ol>
+<li>Memory safety and thread safety Rust's ownership and borrowing system allows for safe memory management, which can prevent common bugs like null pointers, buffer overflows, and use-after-free errors. Here's an example of how Rust's ownership system works:</li>
+</ol>
+<pre><code class="lang-rust"><span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut</span> s = <span class="hljs-built_in">String</span>::from(<span class="hljs-string">"hello"</span>);
+
+    <span class="hljs-keyword">let</span> len = calculate_length(&amp;s);
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"The length of '{}' is {}."</span>, s, len);
+
+    change(&amp;<span class="hljs-keyword">mut</span> s);
+
+    <span class="hljs-keyword">let</span> len = calculate_length(&amp;s);
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"The length of '{}' is {}."</span>, s, len);
+}
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">calculate_length</span></span>(s: &amp;<span class="hljs-built_in">String</span>) -&gt; <span class="hljs-built_in">usize</span> {
+    s.len()
+}
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">change</span></span>(some_string: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-built_in">String</span>) {
+    some_string.push_str(<span class="hljs-string">", world"</span>);
+}
+</code></pre>
+<p>In this example, we create a string <code>s</code> and pass a reference to it to the <code>calculate_length</code> function, which returns the length of the string. We then pass a mutable reference to the <code>change</code> function, which appends <code>", world"</code> to the string. Finally, we call <code>calculate_length</code> again to get the new length of the string. Because Rust's ownership system ensures that there is only one mutable reference to the string at a time, this code is safe and will not cause any memory or thread-related issues.</p>
+<ol>
+<li>High performance Rust is designed to be a high-performance language, which makes it an excellent choice for system-level programming. Here's an example of how Rust's performance compares to that of Python:</li>
+</ol>
+<pre><code class="lang-rust">rust:
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut</span> sum = <span class="hljs-number">0</span>;
+
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">1000000000</span> {
+        sum += i;
+    }
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"{}"</span>, sum);
+}
+</code></pre>
+<pre><code class="lang-python">python
+sum = <span class="hljs-number">0</span>
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">1000000000</span>):
+    sum += i
+print(sum)
+</code></pre>
+<p>In this example, we calculate the sum of the first billion integers in both Rust and Python. When we run the Rust code, it completes in just a few seconds, whereas the Python code takes several minutes to complete. This illustrates Rust's performance advantage over interpreted languages like Python.</p>
+<ol>
+<li>Easy to learn Despite its advanced features, Rust is surprisingly easy to learn. Here's an example of how Rust's syntax is clean and easy to understand:</li>
+</ol>
+<pre><code class="lang-rust"><span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-keyword">let</span> x = <span class="hljs-number">5</span>;
+    <span class="hljs-keyword">let</span> y = {
+        <span class="hljs-keyword">let</span> x = <span class="hljs-number">3</span>;
+        x + <span class="hljs-number">1</span>
+    };
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"The value of x is {}."</span>, x);
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"The value of y is {}."</span>, y);
+}
+</code></pre>
+<p>In this example, we create a variable <code>x</code> and set it to <code>5</code>. We then create another variable <code>y</code> and set it to the result of a block of code that adds 1 to <code>x</code>. Because Rust uses a block expression for the calculation of <code>y</code>, we don't need to use the <code>return</code> keyword, which makes the code more concise and easier to read.</p>
+<ol>
+<li>Cross-platform support Rust is a cross-platform language, meaning that it can be used to develop software for a wide range of platforms, including Windows, macOS, Linux, and even embedded systems. Here's an example of how Rust can be used to develop an application that runs on multiple platforms:</li>
+</ol>
+<pre><code class="lang-rust"><span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Hello, world!"</span>);
+}
+</code></pre>
+<p>This simple "Hello, world!" program can be compiled and run on any platform that supports Rust, without any modifications to the code. This illustrates Rust's cross-platform compatibility, which can save developers time and effort when developing software for multiple platforms.</p>
+<ol>
+<li>Large and growing community:</li>
+</ol>
+<pre><code class="lang-rust"><span class="hljs-keyword">use</span> std::thread;
+
+<span class="hljs-function"><span class="hljs-keyword">fn</span> <span class="hljs-title">main</span></span>() {
+    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut</span> handles = <span class="hljs-built_in">vec!</span>[];
+
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">10</span> {
+        handles.push(thread::spawn(<span class="hljs-keyword">move</span> || {
+            <span class="hljs-built_in">println!</span>(<span class="hljs-string">"Thread {} started."</span>, i);
+        }));
+    }
+
+    <span class="hljs-keyword">for</span> handle <span class="hljs-keyword">in</span> handles {
+        handle.join().unwrap();
+    }
+}
+</code></pre>
+<p>In this example, we create 10 threads that print a message to the console. We use Rust's standard library to create and manage the threads, which makes the code more concise and easier to understand. If we have any questions or issues with this code, we can turn to Rust's community for help, either through forums, chat rooms, or online resources.</p>
+<p>In comparison to other languages like C++, Rust provides advantages in terms of safety, performance, ease of learning, cross-platform support, and community. These features make Rust an excellent choice for system-level programming, game development, web development, and more.</p>
+<h3 id="heading-rust-as-a-server-side-language-are-you-serious">Rust as a server side language , are you serious ?</h3>
+<p>There are several reasons why Rust is a good choice for server-side programming:</p>
+<ol>
+<li><p>Memory safety: Rust's ownership and borrowing system prevents common memory errors like null pointers, buffer overflows, and use-after-free errors, which can lead to security vulnerabilities and crashes. This makes Rust a safe choice for server-side programming, where security and reliability are critical.</p>
+</li>
+<li><p>High performance: Rust is designed to be a high-performance language, which makes it a good choice for server-side programming where performance is important. Rust's performance is comparable to that of C and C++, but with safer memory management.</p>
+</li>
+<li><p>Asynchronous programming: Rust has excellent support for asynchronous programming, which is essential for server-side programming. Rust's async/await syntax and futures library make it easy to write efficient and scalable asynchronous code.</p>
+</li>
+<li><p>Web frameworks: Rust has several excellent web frameworks, including Actix, Rocket, and Warp. These frameworks make it easy to write efficient and secure web applications in Rust, with features like middleware, routing, and authentication.</p>
+</li>
+<li><p>Cross-platform support: Rust is a cross-platform language, meaning that it can be used to develop server-side applications for a wide range of platforms, including Windows, Linux, and macOS.</p>
+</li>
+<li><p>Community: Rust has a large and growing community of developers.</p>
+</li>
+</ol>
+

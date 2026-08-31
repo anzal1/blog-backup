@@ -1,0 +1,98 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Deep Dive into Retryable Jobs with BullMQ</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/a-deep-dive-into-retryable-jobs-with-bullmq">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>A Deep Dive into Retryable Jobs with BullMQ</h1>
+<p class="meta">2023-10-16 &middot; Web Development, Node.js, server, JavaScript, TypeScript</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1697468482596/dcc9706d-879d-4f7c-83dc-11134640eacf.jpeg" alt=""></p>
+<p>Messaging queues are a fundamental part of modern software architecture. They enable the decoupling of services, improving scalability, and resilience. In this blog, we'll explore messaging queues, why they are essential, and provide a simple TypeScript code example.</p>
+<h3 id="heading-what-are-messaging-queues"><strong>What Are Messaging Queues?</strong></h3>
+<p>Messaging queues are a communication mechanism that allows different parts of a software system to exchange information asynchronously. They provide a way for various components or services to interact without knowing anything about each other. This decoupling is crucial in distributed systems and microservices architectures, where independence and scalability are vital.</p>
+<h3 id="heading-why-use-messaging-queues"><strong>Why Use Messaging Queues?</strong></h3>
+<ol>
+<li><p><strong>Decoupling:</strong> Components can work independently without direct dependencies on each other.</p>
+</li>
+<li><p><strong>Scalability:</strong> New consumers or producers can be added without impacting existing services.</p>
+</li>
+<li><p><strong>Reliability:</strong> Messages are stored until successfully processed, reducing data loss.</p>
+</li>
+<li><p><strong>Load Balancing:</strong> Distributes work evenly among consumers.</p>
+</li>
+<li><p><strong>Asynchronous Communication:</strong> Allows for non-blocking, event-driven architectures.</p>
+</li>
+</ol>
+<p><img src="https://miro.medium.com/v2/resize:fit:1400/0*r2scSeajH28VEbQC" alt class="image--center mx-auto" /></p>
+<h2 id="heading-a-real-world-example">A Real world example :</h2>
+<p><a target="_blank" href="https://docs.bullmq.io/">BullMQ</a> is a powerful job and task queue library for Node.js. It's excellent for managing background jobs and tasks, and it offers a wide range of features, including retryable jobs. Retryable jobs are essential for handling tasks that might fail temporarily, such as sending emails, making API requests, or other I/O operations.</p>
+<p><strong>Use Case for Retryable Jobs:</strong></p>
+<p>Imagine you're building an e-commerce platform, and you need to send order confirmation emails to customers. While sending these emails, there could be occasional network issues or problems with the email service provider. In such cases, you don't want to lose these emails; you want to retry sending them a few times before considering them failed.</p>
+<p>Here's a demo of how to use BullMQ for handling retryable jobs in TypeScript:</p>
+<p><strong>Install Dependencies:</strong></p>
+<pre><code class="lang-powershell">npm install bullmq ioredis
+</code></pre>
+<p><strong>Producer Code (sending order confirmation emails):</strong></p>
+<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Queue, Worker } <span class="hljs-keyword">from</span> <span class="hljs-string">'bullmq'</span>;
+
+<span class="hljs-keyword">const</span> emailQueue = <span class="hljs-keyword">new</span> Queue(<span class="hljs-string">'emailQueue'</span>);
+
+<span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">sendOrderConfirmation</span>(<span class="hljs-params">orderId: <span class="hljs-built_in">number</span>, email: <span class="hljs-built_in">string</span></span>) </span>{
+  <span class="hljs-comment">// Simulate sending the email (replace with actual email sending logic).</span>
+  <span class="hljs-comment">// You can deliberately introduce failures to demonstrate retries.</span>
+  <span class="hljs-keyword">if</span> (<span class="hljs-built_in">Math</span>.random() &lt; <span class="hljs-number">0.5</span>) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Failed to send email'</span>);
+  }
+
+  <span class="hljs-comment">// Email sent successfully.</span>
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`Email sent for order <span class="hljs-subst">${orderId}</span> to <span class="hljs-subst">${email}</span>`</span>);
+}
+
+<span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">sendEmailJob</span>(<span class="hljs-params">orderId: <span class="hljs-built_in">number</span>, email: <span class="hljs-built_in">string</span></span>) </span>{
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> sendOrderConfirmation(orderId, email);
+  } <span class="hljs-keyword">catch</span> (error) {
+    <span class="hljs-comment">// The job failed; BullMQ will handle retries.</span>
+    <span class="hljs-keyword">throw</span> error;
+  }
+}
+
+emailQueue.add(<span class="hljs-string">'send-email'</span>, { orderId: <span class="hljs-number">1</span>, email: <span class="hljs-string">'example@example.com'</span> });
+</code></pre>
+<p><strong>Consumer Code (retrying failed jobs):</strong></p>
+<pre><code class="lang-typescript"><span class="hljs-keyword">import</span> { Worker } <span class="hljs-keyword">from</span> <span class="hljs-string">'bullmq'</span>;
+
+<span class="hljs-keyword">const</span> emailQueue = <span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'emailQueue'</span>, <span class="hljs-keyword">async</span> (job) =&gt; {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`Processing job for order <span class="hljs-subst">${job.data.orderId}</span> to <span class="hljs-subst">${job.data.email}</span>`</span>);
+  <span class="hljs-keyword">await</span> sendEmailJob(job.data.orderId, job.data.email);
+});
+
+emailQueue.on(<span class="hljs-string">'completed'</span>, <span class="hljs-function">(<span class="hljs-params">job</span>) =&gt;</span> {
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">`Job completed for order <span class="hljs-subst">${job.data.orderId}</span>`</span>);
+});
+
+emailQueue.on(<span class="hljs-string">'failed'</span>, <span class="hljs-function">(<span class="hljs-params">job, err</span>) =&gt;</span> {
+  <span class="hljs-built_in">console</span>.error(<span class="hljs-string">`Job failed for order <span class="hljs-subst">${job.data.orderId}</span>: <span class="hljs-subst">${err.message}</span>`</span>);
+});
+</code></pre>
+<p>In this example:</p>
+<ol>
+<li><p>The producer code sends email jobs to the <code>emailQueue</code>. It simulates sending emails and occasionally throws an error to mimic a failure.</p>
+</li>
+<li><p>The consumer code processes jobs from the <code>emailQueue</code>. If a job fails (due to the deliberate error thrown), BullMQ will automatically retry it according to its configured retry settings. You can configure these settings, such as the number of retries and the retry delay, when creating the queue.</p>
+</li>
+</ol>
+<p>Retryable jobs are crucial for handling transient failures, ensuring that critical tasks like sending emails are eventually delivered. BullMQ makes it easier to manage these scenarios, providing a reliable way to process tasks even in the face of temporary issues.</p>
+<h3 id="heading-some-popularly-used-queues">Some popularly used Queues :</h3>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1697468554818/1e08b312-429c-4758-a949-a5b5dcf4376b.gif" alt class="image--center mx-auto" /></p>
+

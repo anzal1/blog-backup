@@ -1,0 +1,434 @@
+{
+  "publication": {
+    "title": "Lucifer",
+    "description": "I am an undergraduate student at Jamia Millia Islamia, pursuing a B.Tech in Computer Science Engineering.",
+    "link": "https://anzal.hashnode.dev"
+  },
+  "host": "anzal.hashnode.dev",
+  "count": 23,
+  "posts": [
+    {
+      "title": "Your Wiki Doesn't Know What It Doesn't Know",
+      "slug": "your-wiki-doesn-t-know-what-it-doesn-t-know",
+      "date": "2026-04-15T06:06:07+00:00",
+      "tags": [
+        "llm",
+        "Wikipedia",
+        "AI",
+        "knowledge",
+        "software development"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/your-wiki-doesn-t-know-what-it-doesn-t-know",
+      "cover": "https://cdn.hashnode.com/uploads/covers/63d276afa763c508ab870f55/3792e842-e3dd-4002-83e9-b14a7b71c14d.png",
+      "file": "posts/2026-04-15-your-wiki-doesn-t-know-what-it-doesn-t-know.md",
+      "words": 1744,
+      "images": 7,
+      "source": "rss"
+    },
+    {
+      "title": "The Authentication Gap That Every AI Agent Lives In",
+      "slug": "the-authentication-gap-that-every-ai-agent-lives-in",
+      "date": "2026-02-15T15:38:18+00:00",
+      "tags": [
+        "AI",
+        "agentic AI",
+        "authentication",
+        "authorization",
+        "Computer Science",
+        "Security",
+        "Artificial Intelligence"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/the-authentication-gap-that-every-ai-agent-lives-in",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1771169810948/3465544d-b695-41f1-939f-dbab319f43a3.jpeg",
+      "file": "posts/2026-02-15-the-authentication-gap-that-every-ai-agent-lives-in.md",
+      "words": 1316,
+      "images": 7,
+      "source": "rss"
+    },
+    {
+      "title": "Building Production-Grade Voice AI: The Pain Points Nobody Talks About",
+      "slug": "building-production-grade-voice-ai-the-pain-points-nobody-talks-about",
+      "date": "2026-02-06T18:24:57+00:00",
+      "tags": [
+        "voice ai",
+        "AI",
+        "llm",
+        "agentic AI",
+        "RAG",
+        "Computer Science"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/building-production-grade-voice-ai-the-pain-points-nobody-talks-about",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1770402204425/f73346d5-bc66-41ee-968f-8d22e714fb56.jpeg",
+      "file": "posts/2026-02-06-building-production-grade-voice-ai-the-pain-points-nobody-talks-about.md",
+      "words": 488,
+      "images": 6,
+      "source": "rss"
+    },
+    {
+      "title": "UnClaude: Building an Open-Source AI Engineer with No Model Lock-In",
+      "slug": "unclaude-building-an-open-source-ai-engineer-with-no-model-lock-in",
+      "date": "2026-01-10T14:58:12+00:00",
+      "tags": [
+        "AI",
+        "claude.ai",
+        "automation",
+        "Web Development"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/unclaude-building-an-open-source-ai-engineer-with-no-model-lock-in",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1768056976004/132e96c6-678c-47fa-9640-c6909e3cde45.jpeg",
+      "file": "posts/2026-01-10-unclaude-building-an-open-source-ai-engineer-with-no-model-lock-in.md",
+      "words": 399,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Architecting an AI Frontend Engineer: A Deep Dive into Recursive Code Generation",
+      "slug": "architecting-an-ai-frontend-engineer-a-deep-dive-into-recursive-code-generation",
+      "date": "2025-10-04T11:57:45+00:00",
+      "tags": [
+        "React",
+        "AI",
+        "llm",
+        "agentic AI",
+        "Python"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/architecting-an-ai-frontend-engineer-a-deep-dive-into-recursive-code-generation",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1759578985136/bc9baa16-9979-4a9f-a27d-b892a3a5f4d3.png",
+      "file": "posts/2025-10-04-architecting-an-ai-frontend-engineer-a-deep-dive-into-recursive-code-generation.md",
+      "words": 1703,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Stop Applying for Jobs Manually: Build an AI Agent That Does It for You",
+      "slug": "stop-applying-for-jobs-manually-build-an-ai-agent-that-does-it-for-you",
+      "date": "2025-07-12T12:34:16+00:00",
+      "tags": [
+        "software development",
+        "AI",
+        "automation",
+        "Python",
+        "jobs"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/stop-applying-for-jobs-manually-build-an-ai-agent-that-does-it-for-you",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1752323596756/f9171122-fbed-431e-9945-17a6926403d0.png",
+      "file": "posts/2025-07-12-stop-applying-for-jobs-manually-build-an-ai-agent-that-does-it-for-you.md",
+      "words": 1030,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Building a High-Performance Graph: From SVG Hell to Canvas Heaven",
+      "slug": "building-a-high-performance-graph-from-svg-hell-to-canvas-heaven",
+      "date": "2025-07-08T08:03:53+00:00",
+      "tags": [
+        "React",
+        "Browsers",
+        "Rendering",
+        "optimization",
+        "canvas",
+        "JavaScript"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/building-a-high-performance-graph-from-svg-hell-to-canvas-heaven",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1751961670939/d63a6cf9-17fa-4d03-8ae5-e0dec3bcbc31.png",
+      "file": "posts/2025-07-08-building-a-high-performance-graph-from-svg-hell-to-canvas-heaven.md",
+      "words": 2884,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Lynx vs. React Native: A Comprehensive Comparison",
+      "slug": "lynx-vs-react-native-a-comprehensive-comparison",
+      "date": "2025-03-13T22:29:01+00:00",
+      "tags": [
+        "React",
+        "React Native",
+        "Android",
+        "iOS",
+        "Web Development"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/lynx-vs-react-native-a-comprehensive-comparison",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1741904846534/8f271bd3-7dc4-4e2d-8557-f621d7166d9b.png",
+      "file": "posts/2025-03-13-lynx-vs-react-native-a-comprehensive-comparison.md",
+      "words": 1571,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "A Beginner’s Guide to RTSP Streaming with WebSockets Using Node.js and FFmpeg",
+      "slug": "a-beginners-guide-to-rtsp-streaming-with-websockets-using-nodejs-and-ffmpeg",
+      "date": "2024-09-15T10:05:35+00:00",
+      "tags": [
+        "Node.js",
+        "streaming",
+        "video",
+        "FFmpeg",
+        "Programming Blogs",
+        "React",
+        "HTML5",
+        "npm",
+        "JavaScript"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/a-beginners-guide-to-rtsp-streaming-with-websockets-using-nodejs-and-ffmpeg",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1726394619890/c91433e9-2087-4347-994e-390122aa162a.webp",
+      "file": "posts/2024-09-15-a-beginners-guide-to-rtsp-streaming-with-websockets-using-nodejs-and-ffmpeg.md",
+      "words": 902,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Coinbase Interview Experience [SDE-1 Remote]",
+      "slug": "coinbase-interview-experience-sde-1-remote",
+      "date": "2024-05-01T17:43:07+00:00",
+      "tags": [
+        "software development",
+        "software architecture",
+        "Web Development",
+        "DSA",
+        "remote",
+        "interview"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/coinbase-interview-experience-sde-1-remote",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1714585297825/d590f05d-9bb7-4a0e-91f9-755947d47c54.jpeg",
+      "file": "posts/2024-05-01-coinbase-interview-experience-sde-1-remote.md",
+      "words": 283,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Zomato SDE Interview Experience",
+      "slug": "zomato-sde-interview-experience",
+      "date": "2024-04-16T08:24:33+00:00",
+      "tags": [
+        "interview",
+        "software development",
+        "technology",
+        "Software Engineering",
+        "Web Development",
+        "Devops",
+        "Developer"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/zomato-sde-interview-experience",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1713255729615/150bee53-837a-4bc4-bbb1-2adbf9309845.png",
+      "file": "posts/2024-04-16-zomato-sde-interview-experience.md",
+      "words": 342,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "A Deep Dive into Retryable Jobs with BullMQ",
+      "slug": "a-deep-dive-into-retryable-jobs-with-bullmq",
+      "date": "2023-10-16T15:07:06+00:00",
+      "tags": [
+        "Web Development",
+        "Node.js",
+        "server",
+        "JavaScript",
+        "TypeScript"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/a-deep-dive-into-retryable-jobs-with-bullmq",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1697468482596/dcc9706d-879d-4f7c-83dc-11134640eacf.jpeg",
+      "file": "posts/2023-10-16-a-deep-dive-into-retryable-jobs-with-bullmq.md",
+      "words": 576,
+      "images": 3,
+      "source": "rss"
+    },
+    {
+      "title": "Monerepo Architecture with Nx and Next.js",
+      "slug": "monerepo-architecture-with-nx-and-nextjs",
+      "date": "2023-06-07T19:10:28+00:00",
+      "tags": [
+        "newbie",
+        "Web Development",
+        "Next.js",
+        "Developer",
+        "webdev"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/monerepo-architecture-with-nx-and-nextjs",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1686164822125/2d2a383c-9653-459c-8137-ec3b72b5ca61.png",
+      "file": "posts/2023-06-07-monerepo-architecture-with-nx-and-nextjs.md",
+      "words": 5230,
+      "images": 5,
+      "source": "rss"
+    },
+    {
+      "title": "Embracing Failure: A Journey of Growth and Resilience",
+      "slug": "embracing-failure-a-journey-of-growth-and-resilience",
+      "date": "2023-05-28T09:22:41+00:00",
+      "tags": [
+        "software development",
+        "Web Development",
+        "newbie",
+        "#codenewbies",
+        "Stress,"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/embracing-failure-a-journey-of-growth-and-resilience",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1685265512808/ffda96d8-5cab-4e45-b18b-5092ff00e0c6.webp",
+      "file": "posts/2023-05-28-embracing-failure-a-journey-of-growth-and-resilience.md",
+      "words": 987,
+      "images": 1,
+      "source": "rss"
+    },
+    {
+      "title": "Freelancing, a deception, or a magic wand.",
+      "slug": "freelancing-a-deception-or-a-magic-wand",
+      "date": "2023-04-18T16:41:42+00:00",
+      "tags": [
+        "Freelancing",
+        "coding",
+        "Web Development",
+        "news",
+        "Developer"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/freelancing-a-deception-or-a-magic-wand",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1681835989062/b278a54a-efd8-4bbb-a85c-ae03165909c3.webp",
+      "file": "posts/2023-04-18-freelancing-a-deception-or-a-magic-wand.md",
+      "words": 1239,
+      "images": 2,
+      "source": "rss"
+    },
+    {
+      "title": "Let's Get Rusty",
+      "slug": "lets-get-rusty",
+      "date": "2023-03-08T15:48:36+00:00",
+      "tags": [
+        "Rust",
+        "Programming Blogs",
+        "coding",
+        "technology",
+        "Web Development"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/lets-get-rusty",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1678290018820/c5bd3e21-0607-49bc-ba9e-f74c8e4ad86e.webp",
+      "file": "posts/2023-03-08-lets-get-rusty.md",
+      "words": 1311,
+      "images": 2,
+      "source": "rss"
+    },
+    {
+      "title": "NEO4j , A Modern day ninja.",
+      "slug": "neo4j-a-modern-day-ninja",
+      "date": "2023-01-28T18:33:25+00:00",
+      "tags": [
+        "Databases",
+        "Beginner Developers",
+        "technology",
+        "Web Development",
+        "webdev"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/neo4j-a-modern-day-ninja",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674930666122/9ce8aa6c-726d-4e98-80ad-f9c65fe30a39.png",
+      "file": "posts/2023-01-28-neo4j-a-modern-day-ninja.md",
+      "words": 1314,
+      "images": 4,
+      "source": "rss"
+    },
+    {
+      "title": "Why you need to learn PHP",
+      "slug": "why-you-need-to-learn-php",
+      "date": "2023-01-26T18:25:36+00:00",
+      "tags": [
+        "PHP",
+        "Beginner Developers",
+        "Web Development",
+        "Developer",
+        "languages"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/why-you-need-to-learn-php",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674757323238/1358302d-f016-4f21-9466-c9fed7c52195.png",
+      "file": "posts/2023-01-26-why-you-need-to-learn-php.md",
+      "words": 956,
+      "images": 2,
+      "source": "rss"
+    },
+    {
+      "title": "My work from home workstation",
+      "slug": "my-work-from-home-workstation",
+      "date": "2023-01-26T18:16:22+00:00",
+      "tags": [
+        "workathome",
+        "Beginner Developers",
+        "layoff",
+        "HTML5",
+        "news"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/my-work-from-home-workstation",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674756905500/a129f8c4-3f9e-4270-a4ec-5f002f376d21.jpeg",
+      "file": "posts/2023-01-26-my-work-from-home-workstation.md",
+      "words": 789,
+      "images": 2,
+      "source": "rss"
+    },
+    {
+      "title": "Github Repository Controls",
+      "slug": "github-repository-controls",
+      "date": "2023-01-26T18:00:05+00:00",
+      "tags": [
+        "GitHub",
+        "Beginner Developers",
+        "start",
+        "news",
+        "github-actions"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/github-repository-controls",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674756123788/ab07d909-05d7-4d40-847d-e2d50380b025.png",
+      "file": "posts/2023-01-26-github-repository-controls.md",
+      "words": 1350,
+      "images": 2,
+      "source": "rss"
+    },
+    {
+      "title": "Virtual Assistant , What ,When and how.",
+      "slug": "virtual-assistant-what-when-and-how",
+      "date": "2023-01-26T14:22:46.666000+00:00",
+      "tags": [
+        "virtual assistant",
+        "newbie",
+        "technology",
+        "Amazon"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/virtual-assistant-what-when-and-how",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674742893006/d89f106f-0674-4856-aad5-7c443130b865.jpeg",
+      "file": "posts/2023-01-26-virtual-assistant-what-when-and-how.md",
+      "words": 1910,
+      "images": 2,
+      "source": "page"
+    },
+    {
+      "title": "What you need to know about programming.",
+      "slug": "what-you-need-to-know-about-programming",
+      "date": "2023-01-26T14:13:18.464000+00:00",
+      "tags": [
+        "Programming Blogs",
+        "Beginner Developers",
+        "Programming Tips",
+        "C++",
+        "Python"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/what-you-need-to-know-about-programming",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674742297263/4e964f20-85c5-417a-b065-cf525b509b69.jpeg",
+      "file": "posts/2023-01-26-what-you-need-to-know-about-programming.md",
+      "words": 1246,
+      "images": 2,
+      "source": "page"
+    },
+    {
+      "title": "Artificial Intelligence and Robotics In A Nutshell",
+      "slug": "artificial-intelligence-and-robotics-in-a-nutshell",
+      "date": "2023-01-26T13:55:22.355000+00:00",
+      "tags": [
+        "AI",
+        "chatgpt",
+        "Machine Learning",
+        "Computer Science",
+        "Artificial Intelligence"
+      ],
+      "canonical_url": "https://anzal.hashnode.dev/artificial-intelligence-and-robotics-in-a-nutshell",
+      "cover": "https://cdn.hashnode.com/res/hashnode/image/upload/v1674741482002/645e906a-d560-4498-92b3-194b5ed8fb6e.jpeg",
+      "file": "posts/2023-01-26-artificial-intelligence-and-robotics-in-a-nutshell.md",
+      "words": 513,
+      "images": 2,
+      "source": "page"
+    }
+  ]
+}

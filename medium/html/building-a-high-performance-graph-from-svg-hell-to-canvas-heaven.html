@@ -1,0 +1,499 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Building a High-Performance Graph: From SVG Hell to Canvas Heaven</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/building-a-high-performance-graph-from-svg-hell-to-canvas-heaven">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>Building a High-Performance Graph: From SVG Hell to Canvas Heaven</h1>
+<p class="meta">2025-07-08 &middot; React, Browsers, Rendering, optimization, canvas, JavaScript</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1751961670939/d63a6cf9-17fa-4d03-8ae5-e0dec3bcbc31.png" alt=""></p>
+<h3 id="heading-a-deep-dive-into-rendering-large-networks-with-react-and-d3">A Deep Dive into Rendering Large Networks with React and D3</h3>
+<p>At its core, our work often revolves around data. But raw data in tables and spreadsheets can only tell us so much. The real magic happens when we can <em>see</em> the relationships hidden within that data. This is especially true for network data, where the connections between points are often more important than the points themselves.</p>
+<p>Visualizing these networks allows our analysts to spot fraud rings, understand complex system dependencies, and uncover insights that would be impossible to find in a spreadsheet. The tool for this job? A force-directed graph.</p>
+<p>However, as we quickly discovered, building a graph that looks good with a handful of test nodes is one thing. Building one that stays fast and usable with real-world, large-scale data is another challenge entirely.</p>
+<p>This document chronicles our journey of transforming a sluggish, proof-of-concept graph into a highly performant, feature-rich analysis tool. We'll explore the technical bottlenecks we hit, the architectural decisions we made, and the clever algorithms that saved the day.</p>
+<h2 id="heading-the-tool-for-the-job-what-is-d3js">The Tool for the Job: What is D3.js?</h2>
+<p>Before we dive into the problems, let's talk about the main tool we used: <strong>D3.js (Data-Driven Documents)</strong>.</p>
+<p>D3 is not a "charting library" in the traditional sense. It doesn't give you pre-built bar charts or pie charts. Instead, it gives you a powerful set of tools to bind arbitrary data to the Document Object Model (DOM) and then apply data-driven transformations to the document.</p>
+<p>In simple terms, you can give D3 an array of numbers and use it to create and style a <code>&lt;div&gt;</code> for each number. For graph visualization, we give it an array of nodes and links and use it to create and position SVG elements. Its most powerful feature for our use case is its <code>forceSimulation</code> module—a physics engine that can automatically position nodes in a way that is both aesthetically pleasing and analytically insightful.</p>
+<h2 id="heading-the-first-attempt-the-simplicity-and-deception-of-svg">The First Attempt: The Simplicity and Deception of SVG</h2>
+<p>When you start a D3 project, SVG (Scalable Vector Graphics) is the natural choice. It's a web standard, and it integrates perfectly with D3's data-binding paradigm. The logic feels wonderfully direct: for every node in our data, we create a <code>&lt;circle&gt;</code> element, and for every link, we create a <code>&lt;line&gt;</code> element.</p>
+<pre><code class="lang-javascript"><span class="hljs-comment">// This looks so simple, right?</span>
+<span class="hljs-keyword">const</span> svg = d3.select(<span class="hljs-string">"#graph-container"</span>).append(<span class="hljs-string">"svg"</span>);
+
+<span class="hljs-comment">// Make a line for every link</span>
+svg.selectAll(<span class="hljs-string">"line"</span>).data(links).enter().append(<span class="hljs-string">"line"</span>);
+
+<span class="hljs-comment">// And a circle for every node</span>
+svg.selectAll(<span class="hljs-string">"circle"</span>).data(nodes).enter().append(<span class="hljs-string">"circle"</span>);
+</code></pre>
+<p>This creates a direct, one-to-one relationship between our data and the DOM.</p>
+<p>For a few hundred nodes, this works like a charm! It's crisp, it's interactive (you can attach <code>onClick</code> listeners directly to the circles), and you feel like you've built something amazing in just a few lines of code.</p>
+<p>The problem is, this simple approach has a hidden, dark side that only reveals itself when you start throwing real, complex data at it.</p>
+<h3 id="heading-the-svg-bottleneck-why-our-graph-ground-to-a-halt">The SVG Bottleneck: Why Our Graph Ground to a Halt</h3>
+<p>Here's the catch: SVG is what's called a <strong>"retained-mode"</strong> system. In simple terms, for every single shape you draw, the browser has to create and keep track of a separate object in the DOM.</p>
+<p>Think about it. A graph with 5,000 nodes and 10,000 links means you're creating over <strong>15,000 DOM elements!</strong> This is what our graph looked like—a classic "hairball."</p>
+<p>The real trouble starts when the D3 force simulation kicks in. To create that nice, organic layout, the simulation is constantly adjusting the positions of all the nodes. For our SVG graph, that meant:</p>
+<ol>
+<li><p><strong>The Reflow Nightmare:</strong> On every single "tick" of the simulation, we were telling the browser to update the <code>cx</code> and <code>cy</code> attributes of thousands of circle elements. Every time an element moves, the browser has to do a "reflow"—a super expensive calculation to figure out how that move affects the layout of everything else on the page.</p>
+</li>
+<li><p><strong>Painting Over and Over:</strong> After the reflow, the browser has to repaint all the changed elements.</p>
+</li>
+<li><p><strong>Putting it all Together:</strong> Finally, it composites all these freshly painted layers back onto the screen.</p>
+</li>
+</ol>
+<p>Doing all of that, for thousands of elements, hundreds of times per second? The browser's main thread just couldn't keep up. The result was a jumpy, laggy mess that was frustrating to use and made analysis impossible.</p>
+<h2 id="heading-the-fix-breaking-free-with-canvas">The Fix: Breaking Free with Canvas</h2>
+<p>To get the performance we needed, we had to break free from the DOM. The HTML5 <code>&lt;canvas&gt;</code> element was our escape hatch.</p>
+<h3 id="heading-a-different-way-of-thinking-immediate-mode">A Different Way of Thinking: "Immediate-Mode"</h3>
+<p>Canvas works in <strong>"immediate-mode"</strong>. Think of it like this:</p>
+<ul>
+<li><p><strong>SVG is like building with Legos.</strong> Each brick is a distinct object. You can move a brick, change its color, or attach an event listener to it. The model retains the state of every single brick.</p>
+</li>
+<li><p><strong>Canvas is like... well, a canvas!</strong> You're a painter with a brush. You tell the canvas "draw a circle here," and it puts pixels on the screen. The moment it's drawn, the canvas forgets it was a circle. It's just a collection of pixels. It doesn't retain anything.</p>
+</li>
+</ul>
+<p>This "fire-and-forget" approach is the key to its speed.</p>
+<h3 id="heading-the-performance-win">The Performance Win</h3>
+<ol>
+<li><p><strong>One Element to Rule Them All:</strong> No matter if we have 10 nodes or 10,000, we only ever have <em>one</em> <code>&lt;canvas&gt;</code> element in the DOM. The browser's layout work is basically zero.</p>
+</li>
+<li><p><strong>We're in Control of the Rendering:</strong> We let the D3 physics simulation run in the background, constantly updating the <code>x</code> and <code>y</code> coordinates of our nodes in a simple JavaScript array. Then, in a separate, highly optimized loop using <code>requestAnimationFrame</code>, we tell the canvas to redraw the entire scene based on that data.</p>
+</li>
+</ol>
+<pre><code class="lang-cpp"><span class="hljs-function">function <span class="hljs-title">renderLoop</span><span class="hljs-params">()</span> </span>{
+  <span class="hljs-comment">// 1. Wipe the canvas clean.</span>
+  context.clearRect(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, width, height);
+
+  <span class="hljs-comment">// 2. Loop through our data and paint everything.</span>
+  nodes.forEach(node =&gt; {
+    context.beginPath();
+    context.arc(node.x, node.y, <span class="hljs-number">5</span>, <span class="hljs-number">0</span>, <span class="hljs-number">2</span> * Math.PI);
+    context.fill();
+  });
+
+  <span class="hljs-comment">// 3. Tell the browser we're ready for the next paint frame.</span>
+  requestAnimationFrame(renderLoop);
+}
+</code></pre>
+<p>This decouples the physics from the painting and syncs our drawing with the screen's refresh rate. The result? A buttery-smooth 60fps animation, even with a massive number of nodes!</p>
+<h2 id="heading-the-interaction-challenge-how-do-you-click-on-pixels">The Interaction Challenge: How Do You Click on Pixels?</h2>
+<p>We solved the rendering bottleneck, but created a new problem: <strong>interaction</strong>. The canvas is a dumb pixel buffer. It has no concept of the nodes or edges drawn on it. If a user clicks on the canvas, how do we know <em>what</em> they clicked on?</p>
+<p>The naive approach is a brute-force search: loop through every node and check if the click coordinates are within its radius. This is an <strong>O(n)</strong> operation, meaning it scales linearly with the number of nodes. For 10,000 nodes, this is far too slow.</p>
+<h3 id="heading-the-hero-of-our-story-the-mighty-quadtree">The Hero of Our Story: The Mighty Quadtree</h3>
+<p>This is where the <strong>Quadtree</strong> becomes our most important tool. A quadtree is a data structure that recursively subdivides a 2D space into four quadrants, allowing for incredibly efficient spatial lookups.</p>
+<p>Instead of checking every node, we can find the node under the cursor with <strong>O(log n)</strong> complexity. For 10,000 nodes, this reduces the number of checks from 10,000 to roughly 14.</p>
+<p>In our implementation:</p>
+<ol>
+<li><p><strong>Build the Tree:</strong> On every render frame, we build a new quadtree from the latest node positions: <code>quadtree = d3.quadtree().addAll(nodes)</code>.</p>
+</li>
+<li><p><strong>Find the Node:</strong> On a mouse event, we query the tree: <code>quadtree.find(mouseX, mouseY, searchRadius)</code>.</p>
+</li>
+</ol>
+<p>This is fast enough to run on every mouse move, enabling smooth tooltips, clicks, and dragging on a canvas with tens of thousands of elements.</p>
+<h2 id="heading-putting-it-all-together-a-stable-react-architecture">Putting It All Together: A Stable React Architecture</h2>
+<p>The final piece of the puzzle is ensuring our component is stable within the React ecosystem. A common pitfall is to place the D3 simulation setup inside a standard <code>useEffect</code> hook. This causes the entire simulation to be destroyed and recreated whenever a prop changes, leading to the dreaded "jumping" graph.</p>
+<p>Our solution uses a two-hook architecture:</p>
+<ol>
+<li><p><strong>One-Time Setup</strong> <code>useEffect</code>: This hook runs only once (<code>useEffect(..., [])</code>). It is responsible for all the expensive, one-time setup: creating the simulation, appending UI elements, attaching event listeners, and starting the render loop.</p>
+</li>
+<li><p><strong>Data Update</strong> <code>useEffect</code>: This hook runs only when the <code>dataset</code> prop changes. It does <em>not</em> destroy the simulation. It simply updates the existing simulation with the new data and "reheats" it with <code>simulation.alpha(1).restart()</code>.</p>
+</li>
+</ol>
+<p>This separation is the key to preventing the "jumping" and "twitching" issues, as UI interactions and prop changes no longer trigger a full teardown and recreation of the graph visualization.</p>
+<h2 id="heading-conclusion">Conclusion</h2>
+<p>By migrating from SVG to Canvas, we traded the convenience of the DOM for raw rendering performance. We then regained interactivity by implementing a Quadtree for efficient spatial lookups. Finally, by carefully structuring our React component, we created a stable, non-rerendering architecture. The result is a feature-rich, highly performant graph visualization tool capable of handling the scale and complexity our data demands.</p>
+<h2 id="heading-quadtree-implementation-from-scratch">Quadtree Implementation from Scratch</h2>
+<p>While we use D3's built-in Quadtree for its robustness and integration with the D3 ecosystem, understanding how one works from scratch is enlightening. Below is a simplified JavaScript implementation that demonstrates the core principles of insertion and querying.</p>
+<pre><code class="lang-javascript"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Point</span> </span>{
+    <span class="hljs-keyword">constructor</span>(x, y, data) {
+        <span class="hljs-built_in">this</span>.x = x;
+        <span class="hljs-built_in">this</span>.y = y;
+        <span class="hljs-built_in">this</span>.data = data; <span class="hljs-comment">// Arbitrary data associated with the point</span>
+    }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Rectangle</span> </span>{
+    <span class="hljs-keyword">constructor</span>(x, y, w, h) {
+        <span class="hljs-built_in">this</span>.x = x;
+        <span class="hljs-built_in">this</span>.y = y;
+        <span class="hljs-built_in">this</span>.w = w;
+        <span class="hljs-built_in">this</span>.h = h;
+    }
+
+    contains(point) {
+        <span class="hljs-keyword">return</span> (
+            point.x &gt;= <span class="hljs-built_in">this</span>.x - <span class="hljs-built_in">this</span>.w &amp;&amp;
+            point.x &lt; <span class="hljs-built_in">this</span>.x + <span class="hljs-built_in">this</span>.w &amp;&amp;
+            point.y &gt;= <span class="hljs-built_in">this</span>.y - <span class="hljs-built_in">this</span>.h &amp;&amp;
+            point.y &lt; <span class="hljs-built_in">this</span>.y + <span class="hljs-built_in">this</span>.h
+        );
+    }
+
+    intersects(range) {
+        <span class="hljs-keyword">return</span> !(
+            range.x - range.w &gt; <span class="hljs-built_in">this</span>.x + <span class="hljs-built_in">this</span>.w ||
+            range.x + range.w &lt; <span class="hljs-built_in">this</span>.x - <span class="hljs-built_in">this</span>.w ||
+            range.y - range.h &gt; <span class="hljs-built_in">this</span>.y + <span class="hljs-built_in">this</span>.h ||
+            range.y + range.h &lt; <span class="hljs-built_in">this</span>.y - <span class="hljs-built_in">this</span>.h
+        );
+    }
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">QuadTree</span> </span>{
+    <span class="hljs-keyword">constructor</span>(boundary, capacity) {
+        <span class="hljs-built_in">this</span>.boundary = boundary; <span class="hljs-comment">// A Rectangle object</span>
+        <span class="hljs-built_in">this</span>.capacity = capacity; <span class="hljs-comment">// Max number of points before subdividing</span>
+        <span class="hljs-built_in">this</span>.points = [];
+        <span class="hljs-built_in">this</span>.divided = <span class="hljs-literal">false</span>;
+    }
+
+    subdivide() {
+        <span class="hljs-keyword">const</span> { x, y, w, h } = <span class="hljs-built_in">this</span>.boundary;
+        <span class="hljs-keyword">const</span> nw = <span class="hljs-keyword">new</span> Rectangle(x - w / <span class="hljs-number">2</span>, y - h / <span class="hljs-number">2</span>, w / <span class="hljs-number">2</span>, h / <span class="hljs-number">2</span>);
+        <span class="hljs-keyword">const</span> ne = <span class="hljs-keyword">new</span> Rectangle(x + w / <span class="hljs-number">2</span>, y - h / <span class="hljs-number">2</span>, w / <span class="hljs-number">2</span>, h / <span class="hljs-number">2</span>);
+        <span class="hljs-keyword">const</span> sw = <span class="hljs-keyword">new</span> Rectangle(x - w / <span class="hljs-number">2</span>, y + h / <span class="hljs-number">2</span>, w / <span class="hljs-number">2</span>, h / <span class="hljs-number">2</span>);
+        <span class="hljs-keyword">const</span> se = <span class="hljs-keyword">new</span> Rectangle(x + w / <span class="hljs-number">2</span>, y + h / <span class="hljs-number">2</span>, w / <span class="hljs-number">2</span>, h / <span class="hljs-number">2</span>);
+
+        <span class="hljs-built_in">this</span>.northwest = <span class="hljs-keyword">new</span> QuadTree(nw, <span class="hljs-built_in">this</span>.capacity);
+        <span class="hljs-built_in">this</span>.northeast = <span class="hljs-keyword">new</span> QuadTree(ne, <span class="hljs-built_in">this</span>.capacity);
+        <span class="hljs-built_in">this</span>.southwest = <span class="hljs-keyword">new</span> QuadTree(sw, <span class="hljs-built_in">this</span>.capacity);
+        <span class="hljs-built_in">this</span>.southeast = <span class="hljs-keyword">new</span> QuadTree(se, <span class="hljs-built_in">this</span>.capacity);
+
+        <span class="hljs-built_in">this</span>.divided = <span class="hljs-literal">true</span>;
+    }
+
+    insert(point) {
+        <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>.boundary.contains(point)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+        }
+
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.points.length &lt; <span class="hljs-built_in">this</span>.capacity) {
+            <span class="hljs-built_in">this</span>.points.push(point);
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        } <span class="hljs-keyword">else</span> {
+            <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>.divided) {
+                <span class="hljs-built_in">this</span>.subdivide();
+            }
+
+            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.northeast.insert(point)) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.northwest.insert(point)) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.southeast.insert(point)) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+            <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.southwest.insert(point)) <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        }
+    }
+
+    query(range, found = []) {
+        <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">this</span>.boundary.intersects(range)) {
+            <span class="hljs-keyword">return</span> found;
+        }
+
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> p <span class="hljs-keyword">of</span> <span class="hljs-built_in">this</span>.points) {
+            <span class="hljs-keyword">if</span> (range.contains(p)) {
+                found.push(p);
+            }
+        }
+
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.divided) {
+            <span class="hljs-built_in">this</span>.northwest.query(range, found);
+            <span class="hljs-built_in">this</span>.northeast.query(range, found);
+            <span class="hljs-built_in">this</span>.southwest.query(range, found);
+            <span class="hljs-built_in">this</span>.southeast.query(range, found);
+        }
+
+        <span class="hljs-keyword">return</span> found;
+    }
+}
+</code></pre>
+<h2 id="heading-live-performance-demo">Live Performance Demo</h2>
+<p>To see the performance difference for yourself, save the code below as a single <code>.html</code> file and open it in your browser. It renders the same force-directed graph in a single panel.</p>
+<p>Use the controls at the top to switch between "SVG Mode" and "Canvas Mode" and to increase the number of nodes and links. You will quickly see the SVG version's FPS drop dramatically, while the Canvas version remains smooth and interactive</p>
+<p>Use the controls at the top to switch between "SVG Mode" and "Canvas Mode" and to increase the number of nodes and links. You will quickly see the SVG version's FPS drop dramatically, while the Canvas version remains smooth and interactive.</p>
+<pre><code class="lang-xml"><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>SVG vs. Canvas Performance Demo<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://d3js.org/d3.v7.min.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">style</span>&gt;</span><span class="css">
+        <span class="hljs-selector-tag">body</span> { <span class="hljs-attribute">margin</span>: <span class="hljs-number">0</span>; <span class="hljs-attribute">font-family</span>: -apple-system, BlinkMacSystemFont, <span class="hljs-string">'Segoe UI'</span>, Roboto, <span class="hljs-string">'Helvetica Neue'</span>, Arial, sans-serif; <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#f0f2f5</span>; }
+        <span class="hljs-selector-class">.controls</span> { <span class="hljs-attribute">padding</span>: <span class="hljs-number">15px</span>; <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#fff</span>; <span class="hljs-attribute">border-bottom</span>: <span class="hljs-number">1px</span> solid <span class="hljs-number">#ddd</span>; <span class="hljs-attribute">display</span>: flex; <span class="hljs-attribute">align-items</span>: center; <span class="hljs-attribute">gap</span>: <span class="hljs-number">20px</span>; <span class="hljs-attribute">box-shadow</span>: <span class="hljs-number">0</span> <span class="hljs-number">2px</span> <span class="hljs-number">4px</span> <span class="hljs-built_in">rgba</span>(<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0.1</span>); }
+        <span class="hljs-selector-class">.controls</span> <span class="hljs-selector-tag">label</span> { <span class="hljs-attribute">font-weight</span>: bold; }
+        <span class="hljs-selector-class">.controls</span> <span class="hljs-selector-tag">input</span><span class="hljs-selector-attr">[type=<span class="hljs-string">"number"</span>]</span> { <span class="hljs-attribute">width</span>: <span class="hljs-number">80px</span>; <span class="hljs-attribute">padding</span>: <span class="hljs-number">5px</span>; <span class="hljs-attribute">border</span>: <span class="hljs-number">1px</span> solid <span class="hljs-number">#ccc</span>; <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">4px</span>; }
+        <span class="hljs-selector-class">.controls</span> <span class="hljs-selector-tag">button</span> { <span class="hljs-attribute">padding</span>: <span class="hljs-number">5px</span> <span class="hljs-number">15px</span>; <span class="hljs-attribute">border</span>: <span class="hljs-number">1px</span> solid <span class="hljs-number">#ccc</span>; <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">4px</span>; <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#e9e9e9</span>; <span class="hljs-attribute">cursor</span>: pointer; }
+        <span class="hljs-selector-class">.controls</span> <span class="hljs-selector-class">.mode-toggle</span> <span class="hljs-selector-tag">button</span><span class="hljs-selector-class">.active</span> { <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#007bff</span>; <span class="hljs-attribute">color</span>: white; <span class="hljs-attribute">border-color</span>: <span class="hljs-number">#007bff</span>; }
+        <span class="hljs-selector-class">.container</span> { <span class="hljs-attribute">display</span>: flex; <span class="hljs-attribute">width</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">height</span>: <span class="hljs-built_in">calc</span>(<span class="hljs-number">100vh</span> - <span class="hljs-number">70px</span>); }
+        <span class="hljs-selector-class">.panel</span> { <span class="hljs-attribute">width</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">height</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">position</span>: relative; <span class="hljs-attribute">background-color</span>: <span class="hljs-number">#fff</span>; }
+        <span class="hljs-selector-class">.fps-container</span> { <span class="hljs-attribute">position</span>: absolute; <span class="hljs-attribute">top</span>: <span class="hljs-number">10px</span>; <span class="hljs-attribute">right</span>: <span class="hljs-number">10px</span>; <span class="hljs-attribute">display</span>: flex; <span class="hljs-attribute">flex-direction</span>: column; <span class="hljs-attribute">align-items</span>: flex-end; <span class="hljs-attribute">gap</span>: <span class="hljs-number">10px</span>; }
+        <span class="hljs-selector-class">.fps</span> { <span class="hljs-attribute">background</span>: <span class="hljs-built_in">rgba</span>(<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0.5</span>); <span class="hljs-attribute">color</span>: white; <span class="hljs-attribute">padding</span>: <span class="hljs-number">5px</span> <span class="hljs-number">8px</span>; <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">3px</span>; <span class="hljs-attribute">font-family</span>: monospace; }
+        <span class="hljs-selector-class">.perf-graph</span> { <span class="hljs-attribute">border</span>: <span class="hljs-number">1px</span> solid <span class="hljs-number">#ccc</span>; <span class="hljs-attribute">background-color</span>: <span class="hljs-built_in">rgba</span>(<span class="hljs-number">255</span>,<span class="hljs-number">255</span>,<span class="hljs-number">255</span>,<span class="hljs-number">0.8</span>); }
+        <span class="hljs-selector-id">#graph-container</span> { <span class="hljs-attribute">width</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">height</span>: <span class="hljs-number">100%</span>; }
+        <span class="hljs-selector-id">#graph-container</span> &gt; * { <span class="hljs-attribute">width</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">height</span>: <span class="hljs-number">100%</span>; <span class="hljs-attribute">display</span>: block; }
+        <span class="hljs-selector-class">.tooltip</span> { <span class="hljs-attribute">position</span>: absolute; <span class="hljs-attribute">visibility</span>: hidden; <span class="hljs-attribute">background</span>: <span class="hljs-built_in">rgba</span>(<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0.7</span>); <span class="hljs-attribute">color</span>: white; <span class="hljs-attribute">padding</span>: <span class="hljs-number">4px</span> <span class="hljs-number">8px</span>; <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">3px</span>; <span class="hljs-attribute">pointer-events</span>: none; }
+    </span><span class="hljs-tag">&lt;/<span class="hljs-name">style</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"controls"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"mode-toggle"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">label</span>&gt;</span>Mode:<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"svg-btn"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"active"</span>&gt;</span>SVG<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"canvas-btn"</span>&gt;</span>Canvas<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">"nodes"</span>&gt;</span>Nodes:<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"number"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"nodes"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"500"</span> <span class="hljs-attr">min</span>=<span class="hljs-string">"10"</span> <span class="hljs-attr">max</span>=<span class="hljs-string">"20000"</span> <span class="hljs-attr">step</span>=<span class="hljs-string">"100"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">label</span> <span class="hljs-attr">for</span>=<span class="hljs-string">"links"</span>&gt;</span>Links:<span class="hljs-tag">&lt;/<span class="hljs-name">label</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">input</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"number"</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"links"</span> <span class="hljs-attr">value</span>=<span class="hljs-string">"400"</span> <span class="hljs-attr">min</span>=<span class="hljs-string">"10"</span> <span class="hljs-attr">max</span>=<span class="hljs-string">"20000"</span> <span class="hljs-attr">step</span>=<span class="hljs-string">"100"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"update"</span>&gt;</span>Update Graph<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"container"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"panel"</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"graph-container"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"fps-container"</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"fps-display"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"fps"</span>&gt;</span>-- FPS<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">canvas</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"perf-graph"</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"perf-graph"</span> <span class="hljs-attr">width</span>=<span class="hljs-string">"200"</span> <span class="hljs-attr">height</span>=<span class="hljs-string">"50"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">canvas</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+
+<span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="javascript">
+    <span class="hljs-keyword">const</span> graphContainer = d3.select(<span class="hljs-string">"#graph-container"</span>);
+    <span class="hljs-keyword">const</span> perfCanvas = <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">"perf-graph"</span>);
+    <span class="hljs-keyword">const</span> perfContext = perfCanvas.getContext(<span class="hljs-string">"2d"</span>);
+
+    <span class="hljs-keyword">let</span> activeSimulation;
+    <span class="hljs-keyword">let</span> activeRenderLoopId;
+    <span class="hljs-keyword">let</span> currentMode = <span class="hljs-string">'svg'</span>;
+
+    <span class="hljs-keyword">const</span> fpsCounter = {
+        <span class="hljs-attr">history</span>: [],
+        <span class="hljs-attr">lastTime</span>: performance.now(),
+        <span class="hljs-attr">frames</span>: <span class="hljs-number">0</span>
+    };
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">createData</span>(<span class="hljs-params">numNodes, numLinks</span>) </span>{
+        <span class="hljs-keyword">const</span> nodes = <span class="hljs-built_in">Array</span>.from({<span class="hljs-attr">length</span>: numNodes}, <span class="hljs-function">(<span class="hljs-params">_, i</span>) =&gt;</span> ({<span class="hljs-attr">id</span>: i}));
+        <span class="hljs-keyword">const</span> links = <span class="hljs-built_in">Array</span>.from({<span class="hljs-attr">length</span>: numLinks}, <span class="hljs-function">() =&gt;</span> ({
+            <span class="hljs-attr">source</span>: <span class="hljs-built_in">Math</span>.floor(<span class="hljs-built_in">Math</span>.random() * numNodes),
+            <span class="hljs-attr">target</span>: <span class="hljs-built_in">Math</span>.floor(<span class="hljs-built_in">Math</span>.random() * numNodes)
+        }));
+        <span class="hljs-keyword">return</span> { nodes, links };
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">updateFPS</span>(<span class="hljs-params"></span>) </span>{
+        fpsCounter.frames++;
+        <span class="hljs-keyword">const</span> time = performance.now();
+        <span class="hljs-keyword">if</span> (time &gt;= fpsCounter.lastTime + <span class="hljs-number">1000</span>) {
+            <span class="hljs-keyword">const</span> fps = fpsCounter.frames;
+            fpsCounter.frames = <span class="hljs-number">0</span>;
+            fpsCounter.lastTime = time;
+            <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'fps-display'</span>).textContent = <span class="hljs-string">`<span class="hljs-subst">${fps}</span> FPS`</span>;
+            fpsCounter.history.push(fps);
+            <span class="hljs-keyword">if</span> (fpsCounter.history.length &gt; <span class="hljs-number">100</span>) fpsCounter.history.shift();
+        }
+        drawPerformanceGraph();
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">drawPerformanceGraph</span>(<span class="hljs-params"></span>) </span>{
+        perfContext.clearRect(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, perfCanvas.width, perfCanvas.height);
+        perfContext.fillStyle = <span class="hljs-string">"rgba(240, 240, 240, 0.8)"</span>;
+        perfContext.fillRect(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, perfCanvas.width, perfCanvas.height);
+
+        perfContext.beginPath();
+        perfContext.moveTo(<span class="hljs-number">0</span>, perfCanvas.height - (<span class="hljs-number">60</span> / <span class="hljs-number">70</span> * perfCanvas.height));
+        perfContext.lineTo(perfCanvas.width, perfCanvas.height - (<span class="hljs-number">60</span> / <span class="hljs-number">70</span> * perfCanvas.height));
+        perfContext.strokeStyle = <span class="hljs-string">"rgba(0, 255, 0, 0.5)"</span>;
+        perfContext.stroke();
+
+        perfContext.beginPath();
+        perfContext.moveTo(<span class="hljs-number">0</span>, perfCanvas.height);
+        fpsCounter.history.forEach(<span class="hljs-function">(<span class="hljs-params">fps, i</span>) =&gt;</span> {
+            <span class="hljs-keyword">const</span> x = (i / <span class="hljs-number">99</span>) * perfCanvas.width;
+            <span class="hljs-keyword">const</span> y = perfCanvas.height - (<span class="hljs-built_in">Math</span>.min(fps, <span class="hljs-number">70</span>) / <span class="hljs-number">70</span> * perfCanvas.height);
+            perfContext.lineTo(x, y);
+        });
+        perfContext.strokeStyle = <span class="hljs-string">"#333"</span>;
+        perfContext.stroke();
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">cleanup</span>(<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">if</span> (activeSimulation) activeSimulation.stop();
+        <span class="hljs-keyword">if</span> (activeRenderLoopId) cancelAnimationFrame(activeRenderLoopId);
+        graphContainer.html(<span class="hljs-string">""</span>);
+        fpsCounter.history = [];
+        fpsCounter.frames = <span class="hljs-number">0</span>;
+        fpsCounter.lastTime = performance.now();
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">runSVG</span>(<span class="hljs-params">data, width, height</span>) </span>{
+        cleanup();
+        <span class="hljs-keyword">const</span> svg = graphContainer.append(<span class="hljs-string">"svg"</span>).attr(<span class="hljs-string">"width"</span>, width).attr(<span class="hljs-string">"height"</span>, height);
+        <span class="hljs-keyword">const</span> tooltip = d3.select(<span class="hljs-string">"body"</span>).append(<span class="hljs-string">"div"</span>).attr(<span class="hljs-string">"class"</span>, <span class="hljs-string">"tooltip"</span>);
+
+        activeSimulation = d3.forceSimulation(data.nodes)
+            .force(<span class="hljs-string">"link"</span>, d3.forceLink(data.links).id(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.id))
+            .force(<span class="hljs-string">"charge"</span>, d3.forceManyBody().strength(<span class="hljs-number">-30</span>))
+            .force(<span class="hljs-string">"center"</span>, d3.forceCenter(width / <span class="hljs-number">2</span>, height / <span class="hljs-number">2</span>));
+
+        <span class="hljs-keyword">const</span> link = svg.append(<span class="hljs-string">"g"</span>).selectAll(<span class="hljs-string">"line"</span>).data(data.links).join(<span class="hljs-string">"line"</span>).attr(<span class="hljs-string">"stroke"</span>, <span class="hljs-string">"#999"</span>).attr(<span class="hljs-string">"stroke-opacity"</span>, <span class="hljs-number">0.6</span>);
+        <span class="hljs-keyword">const</span> node = svg.append(<span class="hljs-string">"g"</span>).selectAll(<span class="hljs-string">"circle"</span>).data(data.nodes).join(<span class="hljs-string">"circle"</span>).attr(<span class="hljs-string">"r"</span>, <span class="hljs-number">5</span>).attr(<span class="hljs-string">"fill"</span>, <span class="hljs-string">"#333"</span>)
+            .on(<span class="hljs-string">"mouseover"</span>, <span class="hljs-function">(<span class="hljs-params">event, d</span>) =&gt;</span> {
+                tooltip.style(<span class="hljs-string">"visibility"</span>, <span class="hljs-string">"visible"</span>).text(<span class="hljs-string">`Node <span class="hljs-subst">${d.id}</span>`</span>);
+            })
+            .on(<span class="hljs-string">"mousemove"</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                tooltip.style(<span class="hljs-string">"top"</span>, (event.pageY - <span class="hljs-number">10</span>) + <span class="hljs-string">"px"</span>).style(<span class="hljs-string">"left"</span>, (event.pageX + <span class="hljs-number">10</span>) + <span class="hljs-string">"px"</span>);
+            })
+            .on(<span class="hljs-string">"mouseout"</span>, <span class="hljs-function">() =&gt;</span> {
+                tooltip.style(<span class="hljs-string">"visibility"</span>, <span class="hljs-string">"hidden"</span>);
+            })
+            .call(d3.drag()
+                .on(<span class="hljs-string">"start"</span>, <span class="hljs-function">(<span class="hljs-params">event, d</span>) =&gt;</span> {
+                    <span class="hljs-keyword">if</span> (!event.active) activeSimulation.alphaTarget(<span class="hljs-number">0.3</span>).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on(<span class="hljs-string">"drag"</span>, <span class="hljs-function">(<span class="hljs-params">event, d</span>) =&gt;</span> {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on(<span class="hljs-string">"end"</span>, <span class="hljs-function">(<span class="hljs-params">event, d</span>) =&gt;</span> {
+                    <span class="hljs-keyword">if</span> (!event.active) activeSimulation.alphaTarget(<span class="hljs-number">0</span>);
+                    d.fx = <span class="hljs-literal">null</span>;
+                    d.fy = <span class="hljs-literal">null</span>;
+                }));
+
+        activeSimulation.on(<span class="hljs-string">"tick"</span>, <span class="hljs-function">() =&gt;</span> {
+            link.attr(<span class="hljs-string">"x1"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.source.x).attr(<span class="hljs-string">"y1"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.source.y).attr(<span class="hljs-string">"x2"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.target.x).attr(<span class="hljs-string">"y2"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.target.y);
+            node.attr(<span class="hljs-string">"cx"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.x).attr(<span class="hljs-string">"cy"</span>, <span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.y);
+        });
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">renderLoop</span>(<span class="hljs-params"></span>) </span>{
+            updateFPS();
+            activeRenderLoopId = requestAnimationFrame(renderLoop);
+        }
+        activeRenderLoopId = requestAnimationFrame(renderLoop);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">runCanvas</span>(<span class="hljs-params">data, width, height</span>) </span>{
+        cleanup();
+        <span class="hljs-keyword">const</span> canvas = graphContainer.append(<span class="hljs-string">"canvas"</span>).attr(<span class="hljs-string">"width"</span>, width).attr(<span class="hljs-string">"height"</span>, height).node();
+        <span class="hljs-keyword">const</span> context = canvas.getContext(<span class="hljs-string">"2d"</span>);
+        <span class="hljs-keyword">const</span> tooltip = d3.select(<span class="hljs-string">"body"</span>).append(<span class="hljs-string">"div"</span>).attr(<span class="hljs-string">"class"</span>, <span class="hljs-string">"tooltip"</span>);
+
+        activeSimulation = d3.forceSimulation(data.nodes)
+            .force(<span class="hljs-string">"link"</span>, d3.forceLink(data.links).id(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.id))
+            .force(<span class="hljs-string">"charge"</span>, d3.forceManyBody().strength(<span class="hljs-number">-30</span>))
+            .force(<span class="hljs-string">"center"</span>, d3.forceCenter(width / <span class="hljs-number">2</span>, height / <span class="hljs-number">2</span>));
+
+        <span class="hljs-keyword">let</span> quadtree = d3.quadtree().x(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.x).y(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.y);
+
+        activeSimulation.on(<span class="hljs-string">"tick"</span>, <span class="hljs-function">() =&gt;</span> {
+            quadtree = d3.quadtree().x(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.x).y(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> d.y).addAll(data.nodes);
+            render();
+        });
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">render</span>(<span class="hljs-params"></span>) </span>{
+            context.clearRect(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, width, height);
+            context.beginPath();
+            data.links.forEach(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> {
+                context.moveTo(d.source.x, d.source.y);
+                context.lineTo(d.target.x, d.target.y);
+            });
+            context.strokeStyle = <span class="hljs-string">"#999"</span>;
+            context.stroke();
+            context.beginPath();
+            data.nodes.forEach(<span class="hljs-function"><span class="hljs-params">d</span> =&gt;</span> {
+                context.moveTo(d.x + <span class="hljs-number">5</span>, d.y);
+                context.arc(d.x, d.y, <span class="hljs-number">5</span>, <span class="hljs-number">0</span>, <span class="hljs-number">2</span> * <span class="hljs-built_in">Math</span>.PI);
+            });
+            context.fillStyle = <span class="hljs-string">"#333"</span>;
+            context.fill();
+        }
+
+        d3.select(canvas)
+            .on(<span class="hljs-string">"mousemove"</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                <span class="hljs-keyword">const</span> [mx, my] = d3.pointer(event);
+                <span class="hljs-keyword">const</span> found = quadtree.find(mx, my, <span class="hljs-number">10</span>);
+                <span class="hljs-keyword">if</span> (found) {
+                    tooltip.style(<span class="hljs-string">"visibility"</span>, <span class="hljs-string">"visible"</span>).text(<span class="hljs-string">`Node <span class="hljs-subst">${found.id}</span>`</span>)
+                        .style(<span class="hljs-string">"top"</span>, (event.pageY - <span class="hljs-number">10</span>) + <span class="hljs-string">"px"</span>).style(<span class="hljs-string">"left"</span>, (event.pageX + <span class="hljs-number">10</span>) + <span class="hljs-string">"px"</span>);
+                } <span class="hljs-keyword">else</span> {
+                    tooltip.style(<span class="hljs-string">"visibility"</span>, <span class="hljs-string">"hidden"</span>);
+                }
+            })
+            .call(d3.drag()
+                .subject(<span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                    <span class="hljs-keyword">const</span> [mx, my] = d3.pointer(event, canvas);
+                    <span class="hljs-keyword">return</span> quadtree.find(mx, my, <span class="hljs-number">10</span>);
+                })
+                .on(<span class="hljs-string">"start"</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                    <span class="hljs-keyword">if</span> (!event.active) activeSimulation.alphaTarget(<span class="hljs-number">0.3</span>).restart();
+                    event.subject.fx = event.subject.x;
+                    event.subject.fy = event.subject.y;
+                })
+                .on(<span class="hljs-string">"drag"</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                    event.subject.fx = event.x;
+                    event.subject.fy = event.y;
+                })
+                .on(<span class="hljs-string">"end"</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+                    <span class="hljs-keyword">if</span> (!event.active) activeSimulation.alphaTarget(<span class="hljs-number">0</span>);
+                    event.subject.fx = <span class="hljs-literal">null</span>;
+                    event.subject.fy = <span class="hljs-literal">null</span>;
+                }));
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">animationLoop</span>(<span class="hljs-params"></span>) </span>{
+            updateFPS();
+            activeRenderLoopId = requestAnimationFrame(animationLoop);
+        }
+        activeRenderLoopId = requestAnimationFrame(animationLoop);
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">updateAll</span>(<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">const</span> numNodes = +<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'nodes'</span>).value;
+        <span class="hljs-keyword">const</span> numLinks = +<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'links'</span>).value;
+        <span class="hljs-keyword">const</span> data = createData(numNodes, numLinks);
+
+        <span class="hljs-keyword">const</span> panelWidth = <span class="hljs-built_in">document</span>.querySelector(<span class="hljs-string">'.panel'</span>).clientWidth;
+        <span class="hljs-keyword">const</span> panelHeight = <span class="hljs-built_in">document</span>.querySelector(<span class="hljs-string">'.panel'</span>).clientHeight;
+
+        <span class="hljs-keyword">if</span> (currentMode === <span class="hljs-string">'svg'</span>) {
+            runSVG(data, panelWidth, panelHeight);
+        } <span class="hljs-keyword">else</span> {
+            runCanvas(data, panelWidth, panelHeight);
+        }
+    }
+
+    <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'svg-btn'</span>).addEventListener(<span class="hljs-string">'click'</span>, <span class="hljs-function">() =&gt;</span> {
+        currentMode = <span class="hljs-string">'svg'</span>;
+        <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'svg-btn'</span>).classList.add(<span class="hljs-string">'active'</span>);
+        <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'canvas-btn'</span>).classList.remove(<span class="hljs-string">'active'</span>);
+        updateAll();
+    });
+
+    <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'canvas-btn'</span>).addEventListener(<span class="hljs-string">'click'</span>, <span class="hljs-function">() =&gt;</span> {
+        currentMode = <span class="hljs-string">'canvas'</span>;
+        <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'canvas-btn'</span>).classList.add(<span class="hljs-string">'active'</span>);
+        <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'svg-btn'</span>).classList.remove(<span class="hljs-string">'active'</span>);
+        updateAll();
+    });
+
+    <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'update'</span>).addEventListener(<span class="hljs-string">'click'</span>, updateAll);
+
+    <span class="hljs-comment">// Initial load</span>
+    updateAll();
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+

@@ -1,0 +1,158 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>A Beginner’s Guide to RTSP Streaming with WebSockets Using Node.js and FFmpeg</title>
+<link rel="canonical" href="https://anzal.hashnode.dev/a-beginners-guide-to-rtsp-streaming-with-websockets-using-nodejs-and-ffmpeg">
+<style>
+ body{max-width:46rem;margin:3rem auto;padding:0 1.25rem;
+   font:17px/1.65 Charter,Georgia,serif;color:#1a1a1a}
+ h1{font-size:2.1rem;line-height:1.2}
+ pre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:6px}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+ img{max-width:100%;height:auto}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #ddd;padding:.5rem .6rem;text-align:left}
+ blockquote{margin:0;padding-left:1rem;border-left:3px solid #ddd;color:#555}
+ .meta{color:#777;font-size:.9rem;font-family:system-ui,sans-serif}
+</style>
+<h1>A Beginner’s Guide to RTSP Streaming with WebSockets Using Node.js and FFmpeg</h1>
+<p class="meta">2024-09-15 &middot; Node.js, streaming, video, FFmpeg, Programming Blogs, React, HTML5, npm, JavaScript</p>
+<p><img src="https://cdn.hashnode.com/res/hashnode/image/upload/v1726394619890/c91433e9-2087-4347-994e-390122aa162a.webp" alt=""></p>
+<p><strong>Real-Time Streaming Protocol</strong> (RTSP) is widely used for controlling media streams in surveillance systems, IP cameras, and more. However, interacting with RTSP streams directly in web applications can be challenging since browsers don’t natively support this protocol. The good news is that by leveraging <strong>FFmpeg</strong> and <strong>WebSockets</strong>, you can relay RTSP streams to a browser.</p>
+<p>In this blog, I’ll walk you through the process of streaming RTSP feeds using Node.js and FFmpeg, as well as packaging this into a Docker container. We’ll also go over how to create an npm package that developers can use to set up their own RTSP-to-WebSocket relay server.</p>
+<h2 id="heading-what-is-rtsp">What is RTSP?</h2>
+<p>RTSP (Real-Time Streaming Protocol) is a network control protocol designed for use in entertainment and communications systems to control streaming media servers. It establishes and controls media sessions between endpoints and is often used to deliver live feeds, such as from IP cameras.</p>
+<p>Unfortunately, modern browsers don’t directly support RTSP, so we need to find a way to relay the RTSP stream to a more browser-friendly format, such as WebSockets or HTTP.</p>
+<h3 id="heading-why-use-ffmpeg">Why Use FFmpeg?</h3>
+<p>FFmpeg is a powerful open-source tool that can handle multimedia streams like RTSP. It can transcode, decode, and relay streams in various formats. In this tutorial, FFmpeg will convert the RTSP stream into a format suitable for sending over WebSockets to a browser.</p>
+<h3 id="heading-the-role-of-websockets">The Role of WebSockets</h3>
+<p>WebSockets enable two-way communication between a server and a client over a single, persistent connection. By relaying RTSP streams through WebSockets, we can push the stream data directly to the browser in real time.</p>
+<hr />
+<h2 id="heading-setting-up-the-nodejs-rtsp-stream-relay">Setting Up the Node.js RTSP Stream Relay</h2>
+<h3 id="heading-step-1-create-a-basic-nodejs-server">Step 1: Create a Basic Node.js Server</h3>
+<p>We’ll start by creating a simple Node.js server that will listen for WebSocket connections and relay RTSP streams.</p>
+<ol>
+<li><p><strong>Initialize the Node.js Project</strong></p>
+<p> First, create a project directory and initialize a new Node.js project:</p>
+<pre><code class="lang-bash"> mkdir rtsp-stream-relay
+ <span class="hljs-built_in">cd</span> rtsp-stream-relay
+ npm init -y
+</code></pre>
+</li>
+<li><p><strong>Install Required Dependencies</strong></p>
+<p> We’ll need to install the following packages:</p>
+<ul>
+<li><p><code>express</code>: For creating the server.</p>
+</li>
+<li><p><code>cors</code>: For enabling Cross-Origin Resource Sharing.</p>
+</li>
+<li><p><code>rtsp-relay</code>: A package that simplifies relaying RTSP streams over WebSockets.</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>    Install the required packages:</p>
+<pre><code class="lang-bash">    npm install express cors rtsp-relay
+</code></pre>
+<ol start="3">
+<li><p><strong>Set Up the Express Server</strong></p>
+<p> Create an <code>index.js</code> file and add the following code:</p>
+<pre><code class="lang-javascript"> <span class="hljs-keyword">const</span> cors = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cors'</span>);
+ <span class="hljs-keyword">const</span> express = <span class="hljs-built_in">require</span>(<span class="hljs-string">'express'</span>);
+ <span class="hljs-keyword">const</span> { proxy } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'rtsp-relay'</span>);
+
+ <span class="hljs-keyword">const</span> app = express();
+ app.use(cors());
+
+ <span class="hljs-keyword">const</span> handler = <span class="hljs-function">(<span class="hljs-params">url</span>) =&gt;</span> {
+   <span class="hljs-keyword">return</span> proxy({
+     <span class="hljs-attr">additionalFlags</span>: [<span class="hljs-string">'-q'</span>, <span class="hljs-string">'1'</span>],  <span class="hljs-comment">// Reduce quality for lower bandwidth</span>
+     <span class="hljs-attr">url</span>: url,
+     <span class="hljs-attr">transport</span>: <span class="hljs-string">'tcp'</span>,             <span class="hljs-comment">// Use TCP for stream transport</span>
+     <span class="hljs-attr">verbose</span>: <span class="hljs-literal">true</span>,                <span class="hljs-comment">// Print FFmpeg logs</span>
+   });
+ };
+
+ app.ws(<span class="hljs-string">'/api/stream'</span>, <span class="hljs-function">(<span class="hljs-params">ws, req</span>) =&gt;</span> {
+   <span class="hljs-keyword">const</span> url = req.query.url;      <span class="hljs-comment">// Get RTSP URL from query parameter</span>
+   handler(url)(ws, req);          <span class="hljs-comment">// Proxy RTSP stream via WebSocket</span>
+ });
+
+ app.listen(<span class="hljs-number">3000</span>, <span class="hljs-function">() =&gt;</span> {
+   <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'RTSP Stream relay running on port 3000'</span>);
+ });
+</code></pre>
+</li>
+</ol>
+<p>This basic Express server listens for WebSocket connections on <code>/api/stream</code>, accepts an RTSP URL as a query parameter, and relays the stream via WebSocket.</p>
+<h3 id="heading-step-2-add-ffmpeg-to-handle-rtsp">Step 2: Add FFmpeg to Handle RTSP</h3>
+<p>FFmpeg is responsible for handling the actual RTSP stream. The <code>rtsp-relay</code> package internally uses FFmpeg to convert the RTSP stream into a format that can be sent via WebSocket.</p>
+<p>The <code>proxy</code> function used in the <code>index.js</code> file relays the RTSP stream from the specified <code>url</code> and transmits it over WebSocket. This is where the stream is processed and relayed efficiently.</p>
+<hr />
+<h2 id="heading-step-3-packaging-the-server-with-docker">Step 3: Packaging the Server with Docker</h2>
+<p>Next, we’ll containerize the entire application using Docker. This makes it easy to deploy on any platform without worrying about dependencies.</p>
+<ol>
+<li><p><strong>Create a Dockerfile</strong></p>
+<p> Create a <code>Dockerfile</code> to define the container environment:</p>
+<pre><code class="lang-dockerfile"> <span class="hljs-keyword">FROM</span> ubuntu:<span class="hljs-number">22.04</span>
+
+ <span class="hljs-keyword">RUN</span><span class="bash"> apt-get update &amp;&amp; apt-get install -y ffmpeg</span>
+
+ <span class="hljs-keyword">RUN</span><span class="bash"> apt-get install -y curl</span>
+ <span class="hljs-keyword">RUN</span><span class="bash"> curl -fsSL https://deb.nodesource.com/setup_18.x | bash -</span>
+ <span class="hljs-keyword">RUN</span><span class="bash"> apt-get install -y nodejs</span>
+
+ <span class="hljs-keyword">WORKDIR</span><span class="bash"> /app</span>
+ <span class="hljs-keyword">COPY</span><span class="bash"> package.json yarn.lock ./</span>
+ <span class="hljs-keyword">RUN</span><span class="bash"> npm install</span>
+
+ <span class="hljs-keyword">COPY</span><span class="bash"> . .</span>
+
+ <span class="hljs-keyword">EXPOSE</span> <span class="hljs-number">3000</span>
+
+ <span class="hljs-keyword">CMD</span><span class="bash"> [<span class="hljs-string">"node"</span>, <span class="hljs-string">"index.js"</span>]</span>
+</code></pre>
+</li>
+</ol>
+<p>This Dockerfile uses an Ubuntu base image, installs FFmpeg and Node.js, and runs the Node.js server on port <code>3000</code>.</p>
+<ol start="2">
+<li><p><strong>Build and Run the Docker Image</strong></p>
+<p> Build the Docker image and run the container:</p>
+<pre><code class="lang-bash"> docker build -t rtsp-relay-app .
+ docker run -p 3000:3000 rtsp-relay-app
+</code></pre>
+</li>
+</ol>
+<p>Your RTSP relay server is now running inside the Docker container!</p>
+<hr />
+<h2 id="heading-step-4-viewing-the-stream-in-a-browser">Step 4: Viewing the Stream in a Browser</h2>
+<p>To consume the WebSocket stream in a browser, you’ll need to use the <code>MediaSource</code> API or a video player that supports WebSocket.</p>
+<h3 id="heading-react-example">React Example</h3>
+<p>You can use React to display the video stream:</p>
+<pre><code class="lang-jsx"><span class="hljs-keyword">import</span> React, { useEffect, useRef } <span class="hljs-keyword">from</span> <span class="hljs-string">"react"</span>;
+
+<span class="hljs-keyword">const</span> RTSPStream = <span class="hljs-function">(<span class="hljs-params">{ streamUrl }</span>) =&gt;</span> {
+  <span class="hljs-keyword">const</span> videoRef = useRef(<span class="hljs-literal">null</span>);
+
+  useEffect(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-keyword">const</span> ws = <span class="hljs-keyword">new</span> WebSocket(<span class="hljs-string">`ws://localhost:3000/api/stream?url=<span class="hljs-subst">${streamUrl}</span>`</span>);
+    ws.onmessage = <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> {
+      <span class="hljs-keyword">const</span> video = videoRef.current;
+      <span class="hljs-keyword">const</span> mediaSource = <span class="hljs-keyword">new</span> MediaSource();
+      video.src = URL.createObjectURL(mediaSource);
+      mediaSource.addEventListener(<span class="hljs-string">"sourceopen"</span>, <span class="hljs-function">() =&gt;</span> {
+        <span class="hljs-keyword">const</span> sourceBuffer = mediaSource.addSourceBuffer(<span class="hljs-string">'video/mp4; codecs="avc1.42E01E"'</span>);
+        sourceBuffer.appendBuffer(event.data);
+      });
+    };
+  }, [streamUrl]);
+
+  <span class="hljs-keyword">return</span> <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">video</span> <span class="hljs-attr">ref</span>=<span class="hljs-string">{videoRef}</span> <span class="hljs-attr">controls</span> <span class="hljs-attr">autoPlay</span> /&gt;</span></span>;
+};
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> RTSPStream;
+</code></pre>
+<p>This React component establishes a WebSocket connection and renders the stream in a video element.</p>
+<h2 id="heading-conclusion">Conclusion</h2>
+<p>Streaming RTSP feeds to the browser isn’t natively supported, but by using FFmpeg and WebSockets with a Node.js server, you can create a real-time, two-way relay that efficiently delivers RTSP streams to web clients.</p>
+<p>With a Dockerized environment and an npm package, this solution becomes even more accessible and portable for any development workflow.</p>
+
