@@ -1,10 +1,25 @@
 name: Backup blog
 
 # Re-exports the Hashnode publication and commits anything that changed.
-# Runs weekly, and on demand from the Actions tab.
+#
+# The weekly schedule is off. In September 2026 Hashnode put Cloudflare in
+# front of the whole publication: the sitemap, the feed and the site itself
+# answer 403 to any request without a browser, so the exporter cannot reach
+# them from CI, and the API has been Pro-only since June. The run on 7 Sept
+# was the last one that worked; every run after it failed on
+#   failed to fetch https://anzal.hashnode.dev/sitemap.xml: HTTP Error 403
+#
+# There is nothing to fix here, and a weekly failure email for something
+# unfixable only teaches you to stop reading them. The exporter still works
+# the day access returns or the publication moves, so this stays runnable by
+# hand from the Actions tab.
+#
+# Nothing is at risk meanwhile: the archive already holds every post, and the
+# portfolio repo's content/posts is now the working copy the site builds from.
+# New posts get there through the browser clipper in that repo
+# (scripts/hashnode-clip.js), which is not blocked because it reads the page
+# you already have open.
 on:
-  schedule:
-    - cron: '17 4 * * 1'
   workflow_dispatch:
 
 permissions:
